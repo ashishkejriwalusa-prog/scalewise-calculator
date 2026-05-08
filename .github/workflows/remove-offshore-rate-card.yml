@@ -1,0 +1,43 @@
+name: Remove offshore rate card
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch-index:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Replace hero dashboard metric
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          old = '<div><b>$1,500</b><span>Monthly offshore rate</span></div>'
+          new = '<div><b>30</b><span>Day transition plan</span></div>'
+          s2 = s.replace(old, new)
+          if s2 != s:
+              p.write_text(s2, encoding='utf-8')
+              print('Updated index.html')
+          else:
+              print('No matching offshore rate card found or already updated')
+          PY
+      - name: Commit change if needed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if ! git diff --quiet index.html; then
+            git add index.html
+            git commit -m "Remove monthly offshore rate card from hero"
+            git push
+          else
+            echo "No changes to commit"
+          fi
