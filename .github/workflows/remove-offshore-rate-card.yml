@@ -22,6 +22,8 @@ jobs:
           p = Path('index.html')
           s = p.read_text(encoding='utf-8')
 
+          services_url = 'https://www.linkedin.com/company/scalewiseusa/services/'
+
           # Improve anchor behavior with fixed header
           if 'scroll-margin-top:96px' not in s:
               s = s.replace('section{padding:84px 0}', 'section{padding:84px 0;scroll-margin-top:96px}')
@@ -39,6 +41,10 @@ jobs:
           # Add About link to navigation
           s = s.replace('<div class="links"><a href="#services">Services</a>', '<div class="links"><a href="#about">About</a><a href="#services">Services</a>')
 
+          # Add Book Services tab linked to LinkedIn Services
+          if 'Book Services' not in s:
+              s = s.replace('<a href="#contact">Contact</a>', '<a href="#contact">Contact</a><a href="' + services_url + '" target="_blank" rel="noopener">Book Services</a>')
+
           # Update hero copy and stats to match brand positioning
           s = s.replace('Scale smarter with reliable offshore finance talent.', 'Scale smarter with strategic finance and offshore accounting support.')
           s = s.replace('ScaleWise helps businesses and CPA firms reduce accounting cost, add back-office capacity, and improve finance execution through structured offshore bookkeeping, accounting, reconciliations, reporting, AP/AR, and close support.', 'ScaleWise helps CPA firms, startups, and mid-sized enterprises streamline finance operations, reduce cost, improve visibility, and make better business decisions.')
@@ -49,22 +55,25 @@ jobs:
               s = s.replace('.card ul{margin:14px 0 0;padding-left:18px}', '.card ul{margin:14px 0 0;padding-left:18px}.mapBridge{margin:18px 0 20px;padding:18px;border-radius:22px;background:rgba(255,255,255,.08);border:1px solid rgba(232,189,98,.25)}.mapSvg{width:100%;height:auto;display:block}.mapLabel{font-weight:900;fill:#ffda84;font-size:14px}.mapSmall{fill:rgba(255,255,255,.78);font-size:11px;font-weight:700}.mapNode{fill:rgba(255,255,255,.1);stroke:#e8bd62;stroke-width:2}.mapLine{stroke:#ffda84;stroke-width:3;stroke-dasharray:8 8;filter:drop-shadow(0 0 8px rgba(232,189,98,.45))}')
 
           # Add About section before Services
-          about = '''<section id="about"><div class="container"><div class="head"><h2>Overview</h2><p>ScaleWise is a global finance and advisory firm helping businesses scale smarter through strategic finance, accounting excellence, and data-driven decision-making.</p></div><div class="grid2"><div class="card"><h3>Global finance and advisory partner</h3><p>We partner with CPA firms, startups, and mid-sized enterprises to deliver scalable, cost-efficient, and high-impact finance solutions that drive profitability and operational efficiency.</p><p>Our integrated service model combines deep financial expertise with global delivery capabilities, enabling organizations to streamline processes, improve visibility, and make better business decisions.</p></div><div class="card" style="background:linear-gradient(135deg,#061a33,#073f48);color:#fff;border-color:rgba(232,189,98,.25)"><h3 style="color:#ffda84">USA revenue center + India cost center</h3><div class="mapBridge"><svg class="mapSvg" viewBox="0 0 560 220" xmlns="http://www.w3.org/2000/svg" aria-label="ScaleWise USA and India operating model"><rect class="mapNode" x="30" y="54" width="170" height="100" rx="22"/><text class="mapLabel" x="115" y="92" text-anchor="middle">USA</text><text class="mapSmall" x="115" y="118" text-anchor="middle">Revenue Center</text><text class="mapSmall" x="115" y="140" text-anchor="middle">Client + Advisory</text><rect class="mapNode" x="360" y="54" width="170" height="100" rx="22"/><text class="mapLabel" x="445" y="92" text-anchor="middle">INDIA</text><text class="mapSmall" x="445" y="118" text-anchor="middle">Surat, Gujarat</text><text class="mapSmall" x="445" y="140" text-anchor="middle">Offshore Cost Center</text><path class="mapLine" d="M205 104 C260 54 310 154 355 104" fill="none"/><circle cx="280" cy="104" r="28" fill="rgba(232,189,98,.14)" stroke="#e8bd62"/><text class="mapLabel" x="280" y="109" text-anchor="middle">SW</text><text class="mapSmall" x="280" y="186" text-anchor="middle">Integrated delivery model: U.S. client ownership + India execution capacity</text></svg></div><p style="color:rgba(255,255,255,.78)"><b>ScaleWise USA</b> leads client relationships, advisory oversight, revenue ownership, and quality governance.</p><p style="color:rgba(255,255,255,.78)"><b>ScaleWise India — Surat, Gujarat</b> operates as the offshore cost center for accounting execution, reconciliations, reporting preparation, bookkeeping, and finance back-office support.</p><p style="color:rgba(255,255,255,.78)"><b>Company Address:</b><br>30 N Gould St Ste 61480<br>Sheridan, WY 82801</p><p><a href="https://www.linkedin.com/company/scalewiseusa" target="_blank" rel="noopener" style="color:#ffda84;font-weight:900;text-decoration:none">Visit ScaleWise on LinkedIn →</a></p></div></div></div></section>'''
+          about = '''<section id="about"><div class="container"><div class="head"><h2>Overview</h2><p>ScaleWise is a global finance and advisory firm helping businesses scale smarter through strategic finance, accounting excellence, and data-driven decision-making.</p></div><div class="grid2"><div class="card"><h3>Global finance and advisory partner</h3><p>We partner with CPA firms, startups, and mid-sized enterprises to deliver scalable, cost-efficient, and high-impact finance solutions that drive profitability and operational efficiency.</p><p>Our integrated service model combines deep financial expertise with global delivery capabilities, enabling organizations to streamline processes, improve visibility, and make better business decisions.</p><p><a href="https://www.linkedin.com/company/scalewiseusa/services/" target="_blank" rel="noopener" style="color:#061a33;font-weight:900;text-decoration:none">Book ScaleWise Services on LinkedIn →</a></p></div><div class="card" style="background:linear-gradient(135deg,#061a33,#073f48);color:#fff;border-color:rgba(232,189,98,.25)"><h3 style="color:#ffda84">USA revenue center + India cost center</h3><div class="mapBridge"><svg class="mapSvg" viewBox="0 0 560 220" xmlns="http://www.w3.org/2000/svg" aria-label="ScaleWise USA and India operating model"><rect class="mapNode" x="30" y="54" width="170" height="100" rx="22"/><text class="mapLabel" x="115" y="92" text-anchor="middle">USA</text><text class="mapSmall" x="115" y="118" text-anchor="middle">Revenue Center</text><text class="mapSmall" x="115" y="140" text-anchor="middle">Client + Advisory</text><rect class="mapNode" x="360" y="54" width="170" height="100" rx="22"/><text class="mapLabel" x="445" y="92" text-anchor="middle">INDIA</text><text class="mapSmall" x="445" y="118" text-anchor="middle">Surat, Gujarat</text><text class="mapSmall" x="445" y="140" text-anchor="middle">Offshore Cost Center</text><path class="mapLine" d="M205 104 C260 54 310 154 355 104" fill="none"/><circle cx="280" cy="104" r="28" fill="rgba(232,189,98,.14)" stroke="#e8bd62"/><text class="mapLabel" x="280" y="109" text-anchor="middle">SW</text><text class="mapSmall" x="280" y="186" text-anchor="middle">Integrated delivery model: U.S. client ownership + India execution capacity</text></svg></div><p style="color:rgba(255,255,255,.78)"><b>ScaleWise USA</b> leads client relationships, advisory oversight, revenue ownership, and quality governance.</p><p style="color:rgba(255,255,255,.78)"><b>ScaleWise India — Surat, Gujarat</b> operates as the offshore cost center for accounting execution, reconciliations, reporting preparation, bookkeeping, and finance back-office support.</p><p style="color:rgba(255,255,255,.78)"><b>Company Address:</b><br>30 N Gould St Ste 61480<br>Sheridan, WY 82801</p><p><a href="https://www.linkedin.com/company/scalewiseusa" target="_blank" rel="noopener" style="color:#ffda84;font-weight:900;text-decoration:none">Visit ScaleWise on LinkedIn →</a></p></div></div></div></section>'''
           if 'id="about"' not in s:
               s = s.replace('<section id="services">', about + '\n<section id="services">')
           elif 'class="mapBridge"' not in s:
-              # Insert map into existing about operating model card if About already exists
               marker = '<h3 style="color:#ffda84">USA revenue center + India cost center</h3>'
               map_html = marker + '<div class="mapBridge"><svg class="mapSvg" viewBox="0 0 560 220" xmlns="http://www.w3.org/2000/svg"><rect class="mapNode" x="30" y="54" width="170" height="100" rx="22"/><text class="mapLabel" x="115" y="92" text-anchor="middle">USA</text><text class="mapSmall" x="115" y="118" text-anchor="middle">Revenue Center</text><text class="mapSmall" x="115" y="140" text-anchor="middle">Client + Advisory</text><rect class="mapNode" x="360" y="54" width="170" height="100" rx="22"/><text class="mapLabel" x="445" y="92" text-anchor="middle">INDIA</text><text class="mapSmall" x="445" y="118" text-anchor="middle">Surat, Gujarat</text><text class="mapSmall" x="445" y="140" text-anchor="middle">Offshore Cost Center</text><path class="mapLine" d="M205 104 C260 54 310 154 355 104" fill="none"/><circle cx="280" cy="104" r="28" fill="rgba(232,189,98,.14)" stroke="#e8bd62"/><text class="mapLabel" x="280" y="109" text-anchor="middle">SW</text><text class="mapSmall" x="280" y="186" text-anchor="middle">Integrated delivery model: U.S. client ownership + India execution capacity</text></svg></div>'
               s = s.replace(marker, map_html)
+
+          # Add booking link near services intro if possible
+          if 'Book ScaleWise Services on LinkedIn' not in s:
+              s = s.replace('From day-to-day bookkeeping to month-end support, ScaleWise gives finance teams and CPA firms disciplined capacity without bloated hiring.</p>', 'From day-to-day bookkeeping to month-end support, ScaleWise gives finance teams and CPA firms disciplined capacity without bloated hiring.</p><p><a href="' + services_url + '" target="_blank" rel="noopener" style="color:#061a33;font-weight:900;text-decoration:none">Book ScaleWise Services on LinkedIn →</a></p>')
 
           # Add grid2 style if missing
           if '.grid2{' not in s:
               s = s.replace('.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}', '.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start}')
               s = s.replace('.links,.contactTop{display:none}.heroGrid,.calcWrap,.grid3{grid-template-columns:1fr}', '.links,.contactTop{display:none}.heroGrid,.calcWrap,.grid3,.grid2{grid-template-columns:1fr}')
 
-          # Update contact section with address and LinkedIn
-          s = s.replace('<div><p><a href="mailto:info@scalewise.group">info@scalewise.group</a></p><p><a href="tel:+13072850020">+1 307 285 0020</a></p></div></div></div></section>', '<div><p><a href="mailto:info@scalewise.group">info@scalewise.group</a></p><p><a href="tel:+13072850020">+1 307 285 0020</a></p><p><a href="https://www.linkedin.com/company/scalewiseusa" target="_blank" rel="noopener">LinkedIn Page →</a></p></div></div></div></section>')
+          # Update contact section with address and LinkedIn/services links
+          s = s.replace('<div><p><a href="mailto:info@scalewise.group">info@scalewise.group</a></p><p><a href="tel:+13072850020">+1 307 285 0020</a></p></div></div></div></section>', '<div><p><a href="mailto:info@scalewise.group">info@scalewise.group</a></p><p><a href="tel:+13072850020">+1 307 285 0020</a></p><p><a href="https://www.linkedin.com/company/scalewiseusa" target="_blank" rel="noopener">LinkedIn Page →</a></p><p><a href="https://www.linkedin.com/company/scalewiseusa/services/" target="_blank" rel="noopener">Book Services →</a></p></div></div></div></section>')
           s = s.replace('Send your calculator result and ScaleWise will help identify the right offshore accounting setup.</p>', 'Send your calculator result and ScaleWise will help identify the right offshore accounting setup.</p><p style="margin-top:12px;color:rgba(255,255,255,.82)">30 N Gould St Ste 61480, Sheridan, WY 82801</p>')
 
           # Add robust click scrolling JS with active bar movement above existing calculator script
@@ -73,7 +82,7 @@ jobs:
               s = s.replace('<script>\nconst qs=', scroll_js + '<script>\nconst qs=')
 
           p.write_text(s, encoding='utf-8')
-          print('Patched ScaleWise site content with active nav and map diagram')
+          print('Patched ScaleWise site content with active nav, map diagram and Book Services tab')
           PY
       - name: Commit change if needed
         run: |
@@ -81,7 +90,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           if ! git diff --quiet index.html; then
             git add index.html
-            git commit -m "Add active navigation bar and country map diagram"
+            git commit -m "Add Book Services LinkedIn services tab"
             git push
           else
             echo "No changes to commit"
