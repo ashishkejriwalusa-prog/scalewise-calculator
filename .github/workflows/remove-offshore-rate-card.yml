@@ -1,4 +1,4 @@
-name: Remove offshore rate card
+name: Patch ScaleWise site content
 
 on:
   push:
@@ -15,20 +15,49 @@ jobs:
       - uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Replace hero dashboard metric
+      - name: Patch navigation, overview and contact details
         run: |
           python - <<'PY'
           from pathlib import Path
           p = Path('index.html')
           s = p.read_text(encoding='utf-8')
-          old = '<div><b>$1,500</b><span>Monthly offshore rate</span></div>'
-          new = '<div><b>30</b><span>Day transition plan</span></div>'
-          s2 = s.replace(old, new)
-          if s2 != s:
-              p.write_text(s2, encoding='utf-8')
-              print('Updated index.html')
-          else:
-              print('No matching offshore rate card found or already updated')
+
+          # Improve anchor behavior with fixed header
+          if 'scroll-margin-top:96px' not in s:
+              s = s.replace('section{padding:84px 0}', 'section{padding:84px 0;scroll-margin-top:96px}')
+          s = s.replace('.nav{position:sticky;', '.nav{position:fixed;left:0;right:0;')
+          s = s.replace('.hero{background:', '.hero{padding-top:150px;background:')
+          s = s.replace('color:#fff;padding:112px 0 82px}', 'color:#fff;padding:150px 0 82px}')
+
+          # Add About link to navigation
+          s = s.replace('<div class="links"><a href="#services">Services</a>', '<div class="links"><a href="#about">About</a><a href="#services">Services</a>')
+
+          # Update hero copy and stats to match brand positioning
+          s = s.replace('Scale smarter with reliable offshore finance talent.', 'Scale smarter with strategic finance and offshore accounting support.')
+          s = s.replace('ScaleWise helps businesses and CPA firms reduce accounting cost, add back-office capacity, and improve finance execution through structured offshore bookkeeping, accounting, reconciliations, reporting, AP/AR, and close support.', 'ScaleWise helps CPA firms, startups, and mid-sized enterprises streamline finance operations, reduce cost, improve visibility, and make better business decisions.')
+          s = s.replace('<div class="stats"><div class="stat"><b>2,400+</b><span>Businesses reached</span></div><div class="stat"><b>5★</b><span>Client-rated support</span></div><div class="stat"><b>30</b><span>Day transition plan</span></div></div>', '<div class="stats"><div class="stat"><b>USA</b><span>Revenue center</span></div><div class="stat"><b>India</b><span>Cost center</span></div><div class="stat"><b>30</b><span>Day transition plan</span></div></div>')
+
+          # Add About section before Services
+          about = '''<section id="about"><div class="container"><div class="head"><h2>Overview</h2><p>ScaleWise is a global finance and advisory firm helping businesses scale smarter through strategic finance, accounting excellence, and data-driven decision-making.</p></div><div class="grid2"><div class="card"><h3>Global finance and advisory partner</h3><p>We partner with CPA firms, startups, and mid-sized enterprises to deliver scalable, cost-efficient, and high-impact finance solutions that drive profitability and operational efficiency.</p><p>Our integrated service model combines deep financial expertise with global delivery capabilities, enabling organizations to streamline processes, improve visibility, and make better business decisions.</p></div><div class="card" style="background:linear-gradient(135deg,#061a33,#073f48);color:#fff;border-color:rgba(232,189,98,.25)"><h3 style="color:#ffda84">USA revenue center + India cost center</h3><p style="color:rgba(255,255,255,.78)"><b>ScaleWise USA</b> leads client relationships, advisory oversight, revenue ownership, and quality governance.</p><p style="color:rgba(255,255,255,.78)"><b>ScaleWise India — Surat, Gujarat</b> operates as the offshore cost center for accounting execution, reconciliations, reporting preparation, bookkeeping, and finance back-office support.</p><p style="color:rgba(255,255,255,.78)"><b>Company Address:</b><br>30 N Gould St Ste 61480<br>Sheridan, WY 82801</p><p><a href="https://www.linkedin.com/company/scalewiseusa" target="_blank" rel="noopener" style="color:#ffda84;font-weight:900;text-decoration:none">Visit ScaleWise on LinkedIn →</a></p></div></div></div></section>'''
+          if 'id="about"' not in s:
+              s = s.replace('<section id="services">', about + '\n<section id="services">')
+
+          # Add grid2 style if missing
+          if '.grid2{' not in s:
+              s = s.replace('.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}', '.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start}')
+              s = s.replace('.links,.contactTop{display:none}.heroGrid,.calcWrap,.grid3{grid-template-columns:1fr}', '.links,.contactTop{display:none}.heroGrid,.calcWrap,.grid3,.grid2{grid-template-columns:1fr}')
+
+          # Update contact section with address and LinkedIn
+          s = s.replace('<div><p><a href="mailto:info@scalewise.group">info@scalewise.group</a></p><p><a href="tel:+13072850020">+1 307 285 0020</a></p></div></div></div></section>', '<div><p><a href="mailto:info@scalewise.group">info@scalewise.group</a></p><p><a href="tel:+13072850020">+1 307 285 0020</a></p><p><a href="https://www.linkedin.com/company/scalewiseusa" target="_blank" rel="noopener">LinkedIn Page →</a></p></div></div></div></section>')
+          s = s.replace('Send your calculator result and ScaleWise will help identify the right offshore accounting setup.</p>', 'Send your calculator result and ScaleWise will help identify the right offshore accounting setup.</p><p style="margin-top:12px;color:rgba(255,255,255,.82)">30 N Gould St Ste 61480, Sheridan, WY 82801</p>')
+
+          # Add robust click scrolling JS above existing calculator script
+          scroll_js = """\n<script>document.addEventListener('click',function(e){var a=e.target.closest('a[href^="#"]');if(!a)return;var h=a.getAttribute('href');var t=h==='#home'?document.body:document.querySelector(h);if(!t)return;e.preventDefault();var nav=document.querySelector('.nav');var off=nav?nav.offsetHeight+16:90;var y=h==='#home'?0:t.getBoundingClientRect().top+window.pageYOffset-off;window.scrollTo({top:y,behavior:'smooth'});history.pushState(null,'',h);});</script>\n"""
+          if 'document.addEventListener(\'click\'' not in s and 'document.addEventListener("click"' not in s:
+              s = s.replace('<script>\nconst qs=', scroll_js + '<script>\nconst qs=')
+
+          p.write_text(s, encoding='utf-8')
+          print('Patched ScaleWise site content')
           PY
       - name: Commit change if needed
         run: |
@@ -36,7 +65,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           if ! git diff --quiet index.html; then
             git add index.html
-            git commit -m "Remove monthly offshore rate card from hero"
+            git commit -m "Fix navigation and add ScaleWise overview section"
             git push
           else
             echo "No changes to commit"
