@@ -1,36 +1,48 @@
-module.exports = async function handler(req, res) {
-  res.setHeader('Content-Type', 'application/json; charset=utf-8');
-  res.setHeader('Cache-Control', 'no-store');
+exports.handler = async function handler(event) {
+  const headers = {
+    'Content-Type': 'application/json; charset=utf-8',
+    'Cache-Control': 'no-store',
+  };
 
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'method_not_allowed' });
+  if (event.httpMethod !== 'POST') {
+    return json(405, { error: 'method_not_allowed' }, headers);
   }
 
-  const message = typeof req.body?.message === 'string' ? req.body.message.trim() : '';
-  const previousResponseId = typeof req.body?.previousResponseId === 'string'
-    ? req.body.previousResponseId.trim()
+  let body = {};
+  try {
+    body = event.body ? JSON.parse(event.body) : {};
+  } catch (error) {
+    return json(400, {
+      error: 'invalid_json',
+      reply: 'Please send a valid chat message.',
+    }, headers);
+  }
+
+  const message = typeof body?.message === 'string' ? body.message.trim() : '';
+  const previousResponseId = typeof body?.previousResponseId === 'string'
+    ? body.previousResponseId.trim()
     : '';
 
   if (!message) {
-    return res.status(400).json({
+    return json(400, {
       error: 'missing_message',
       reply: 'Please type a question so ScaleWise AI can help.',
-    });
+    }, headers);
   }
 
   if (message.length > 3000) {
-    return res.status(413).json({
+    return json(413, {
       error: 'message_too_long',
       reply: 'Please shorten the message and try again.',
-    });
+    }, headers);
   }
 
   if (!process.env.OPENAI_API_KEY) {
-    return res.status(503).json({
+    return json(503, {
       error: 'not_configured',
       configured: false,
-      reply: 'The live ScaleWise AI agent is installed in the website code, but the OpenAI API key still needs to be added in the deployment environment. Please contact info@scalewise.group for immediate help.',
-    });
+      reply: 'The live ScaleWise AI agent is installed in the website code, but the OpenAI API key still needs to be added in Netlify environment variables. Please contact info@scalewise.group for immediate help.',
+    }, headers);
   }
 
   const instructions = `You are ScaleWise AI, the official customer-facing business assistant for ScaleWise Group.
@@ -80,29 +92,38 @@ Guardrails:
     const data = await openaiRes.json();
 
     if (!openaiRes.ok) {
-      return res.status(502).json({
+      return json(502, {
         error: 'provider_error',
         configured: true,
         reply: 'ScaleWise AI could not complete that request right now. Please try again or contact info@scalewise.group.',
         providerMessage: data?.error?.message || 'OpenAI request failed.',
-      });
+      }, headers);
     }
 
-    const reply = extractText(data) || 'Thanks for your question. Please contact info@scalewise.group so the ScaleWise team can help directly.';
+    const reply = extractText(data)
+      || 'Thanks for your question. Please contact info@scalewise.group so the ScaleWise team can help directly.';
 
-    return res.status(200).json({
+    return json(200, {
       configured: true,
       reply,
       responseId: data.id || null,
-    });
+    }, headers);
   } catch (error) {
-    return res.status(502).json({
+    return json(502, {
       error: 'network_error',
       configured: true,
       reply: 'ScaleWise AI could not reach the live answer service right now. Please try again or contact info@scalewise.group.',
-    });
+    }, headers);
   }
 };
+
+function json(statusCode, body, headers) {
+  return {
+    statusCode,
+    headers,
+    body: JSON.stringify(body),
+  };
+}
 
 function extractText(response) {
   const chunks = [];
