@@ -19,9 +19,6 @@ exports.handler = async function handler(event) {
   }
 
   const message = typeof body?.message === 'string' ? body.message.trim() : '';
-  const previousResponseId = typeof body?.previousResponseId === 'string'
-    ? body.previousResponseId.trim()
-    : '';
 
   if (!message) {
     return json(400, {
@@ -37,85 +34,51 @@ exports.handler = async function handler(event) {
     }, headers);
   }
 
-  if (!process.env.OPENAI_API_KEY) {
-    return json(503, {
-      error: 'not_configured',
-      configured: false,
-      reply: 'The live ScaleWise AI agent is installed in the website code, but the OpenAI API key still needs to be added in Netlify environment variables. Please contact info@scalewise.group for immediate help.',
-    }, headers);
-  }
-
-  const instructions = `You are ScaleWise AI, the official customer-facing business assistant for ScaleWise Group.
-
-Goals:
-- Answer website visitor questions warmly, professionally, and accurately.
-- Explain ScaleWise services, fit, process, and business value.
-- Help with bookkeeping, accounting, AP/AR, reconciliations, reporting preparation, tax-ready workflows, FP&A, controller-style execution, offshore finance delivery, CPA firm support, and restaurant bookkeeping.
-
-ScaleWise facts you may state:
-- ScaleWise Group / ScaleWise provides finance and accounting support for growing businesses and CPA firms.
-- Public contact email: info@scalewise.group.
-- Public phone: +1 307 285 0020.
-- Public address shown on the website: 30 N Gould St Ste 61480, Sheridan, WY 82801.
-- ScaleWise positions its model around U.S.-facing client leadership and India-based delivery capacity.
-
-Guardrails:
-- Never fabricate ScaleWise pricing, client names, credentials, guarantees, delivery timelines, contract terms, or legal commitments.
-- For pricing, explain that pricing depends on transaction volume, number of entities, reporting needs, cleanup needs, complexity, and advisory scope. Offer a team handoff.
-- For proposals, contracts, confidential matters, account-specific issues, or binding commitments, say: “For this, let me connect you with our team at ScaleWise — they’ll be able to help you directly.”
-- Do not present general tax, accounting, or compliance information as individualized legal or tax advice.
-- Keep responses focused, clear, and useful. Use short paragraphs or bullets only when they improve readability.
-- End naturally with an invitation to continue or contact the team when appropriate.`;
-
-  const payload = {
-    model: process.env.OPENAI_MODEL || 'gpt-4.1-mini',
-    instructions,
-    input: message,
-    store: true,
-    max_output_tokens: 700,
-  };
-
-  if (previousResponseId) {
-    payload.previous_response_id = previousResponseId;
-  }
-
-  try {
-    const openaiRes = await fetch('https://api.openai.com/v1/responses', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    });
-
-    const data = await openaiRes.json();
-
-    if (!openaiRes.ok) {
-      return json(502, {
-        error: 'provider_error',
-        configured: true,
-        reply: 'ScaleWise AI could not complete that request right now. Please try again or contact info@scalewise.group.',
-        providerMessage: data?.error?.message || 'OpenAI request failed.',
-      }, headers);
-    }
-
-    const reply = extractText(data)
-      || 'Thanks for your question. Please contact info@scalewise.group so the ScaleWise team can help directly.';
-
-    return json(200, {
-      configured: true,
-      reply,
-      responseId: data.id || null,
-    }, headers);
-  } catch (error) {
-    return json(502, {
-      error: 'network_error',
-      configured: true,
-      reply: 'ScaleWise AI could not reach the live answer service right now. Please try again or contact info@scalewise.group.',
-    }, headers);
-  }
+  return json(200, {
+    configured: true,
+    mode: 'preset_answers',
+    reply: replyFor(message),
+    responseId: null,
+  }, headers);
 };
+
+function replyFor(question) {
+  const s = String(question || '').toLowerCase();
+
+  if ((s.includes('what') && s.includes('scalewise')) || s.includes('services')) {
+    return 'ScaleWise supports bookkeeping, reconciliations, AP/AR, reporting preparation, tax-ready workflows, finance operations, FP&A, and offshore support for CPA firms and growing businesses.';
+  }
+
+  if (s.includes('price') || s.includes('pricing') || s.includes('cost') || s.includes('charge')) {
+    return 'Pricing depends on transaction volume, number of entities, reporting needs, tax-readiness, and the level of advisory support required. For a formal quote, the ScaleWise team can review your scope directly.';
+  }
+
+  if (s.includes('cpa') || s.includes('accounting firm')) {
+    return 'Yes. ScaleWise can support CPA firms with white-label bookkeeping, cleanup projects, reconciliations, reporting preparation, and seasonal capacity support.';
+  }
+
+  if (s.includes('restaurant') || s.includes('food') || s.includes('operator')) {
+    return 'Yes. Restaurant bookkeeping often needs careful tracking of daily sales, delivery-app payouts, tips, payroll coordination, vendor invoices, and cash reconciliation. ScaleWise can help structure that workflow.';
+  }
+
+  if (s.includes('tax')) {
+    return 'ScaleWise can support tax-ready workflows through organized books, reconciled accounts, supporting schedules, and year-end cleanup. Formal tax positions or filings should be confirmed with the responsible tax professional.';
+  }
+
+  if (s.includes('proposal') || s.includes('contract') || s.includes('quote') || s.includes('sensitive')) {
+    return 'For proposals, contracts, confidential matters, or account-specific questions, please contact the ScaleWise team at info@scalewise.group.';
+  }
+
+  if (s.includes('contact') || s.includes('call') || s.includes('email') || s.includes('book')) {
+    return 'You can contact ScaleWise at info@scalewise.group or +1 307 285 0020.';
+  }
+
+  if (s === 'hi' || s === 'hello' || s === 'hey' || s.includes('good morning') || s.includes('good afternoon')) {
+    return 'Hello! Welcome to ScaleWise. I can help with our services, pricing approach, CPA firm support, restaurant bookkeeping, and contact details.';
+  }
+
+  return 'Thanks for your question. ScaleWise can help with finance operations, bookkeeping, reporting, tax-ready workflows, and offshore support. For a tailored answer, please contact info@scalewise.group.';
+}
 
 function json(statusCode, body, headers) {
   return {
@@ -123,17 +86,4 @@ function json(statusCode, body, headers) {
     headers,
     body: JSON.stringify(body),
   };
-}
-
-function extractText(response) {
-  const chunks = [];
-  for (const item of response?.output || []) {
-    if (item?.type !== 'message') continue;
-    for (const part of item?.content || []) {
-      if (part?.type === 'output_text' && typeof part.text === 'string') {
-        chunks.push(part.text);
-      }
-    }
-  }
-  return chunks.join('\n').trim();
 }
