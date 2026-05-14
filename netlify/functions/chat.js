@@ -68,7 +68,7 @@ Guardrails:
 - End naturally with an invitation to continue or contact the team when appropriate.`;
 
   const payload = {
-    model: process.env.OPENAI_MODEL || 'gpt-4.1-mini',
+    model: process.env.OPENAI_MODEL || 'gpt-5.4-mini',
     instructions,
     input: message,
     store: true,
