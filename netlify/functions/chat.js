@@ -92,11 +92,14 @@ Guardrails:
     const data = await openaiRes.json();
 
     if (!openaiRes.ok) {
+      const providerMessage = data?.error?.message || 'OpenAI request failed.';
+      const providerCode = data?.error?.code || '';
       return json(502, {
         error: 'provider_error',
         configured: true,
-        reply: 'ScaleWise AI could not complete that request right now. Please try again or contact info@scalewise.group.',
-        providerMessage: data?.error?.message || 'OpenAI request failed.',
+        reply: providerErrorReply(providerMessage, providerCode),
+        providerMessage,
+        providerCode,
       }, headers);
     }
 
@@ -116,6 +119,25 @@ Guardrails:
     }, headers);
   }
 };
+
+function providerErrorReply(message, code) {
+  const detail = String(message || '').trim();
+  const lower = `${code || ''} ${detail}`.toLowerCase();
+
+  if (lower.includes('incorrect api key') || lower.includes('invalid_api_key') || lower.includes('authentication') || lower.includes('401')) {
+    return 'ScaleWise AI is connected, but the OpenAI API key in Netlify appears to be invalid. Please replace the OPENAI_API_KEY environment variable with a valid OpenAI API key and redeploy the site.';
+  }
+
+  if (lower.includes('insufficient_quota') || lower.includes('quota') || lower.includes('billing') || lower.includes('credits') || lower.includes('429')) {
+    return 'ScaleWise AI is connected, but the OpenAI API project appears to have no available quota, credits, or billing access. Please review API billing/usage in the OpenAI dashboard, then try again.';
+  }
+
+  if (lower.includes('model') && (lower.includes('not found') || lower.includes('does not exist') || lower.includes('access'))) {
+    return 'ScaleWise AI is connected, but the selected OpenAI model is not available to this API project. Please set OPENAI_MODEL in Netlify to a model enabled for the project, then redeploy.';
+  }
+
+  return `ScaleWise AI reached OpenAI, but OpenAI returned an error: ${detail}`;
+}
 
 function json(statusCode, body, headers) {
   return {
