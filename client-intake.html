@@ -8,9 +8,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
     :root{--navy:#061a33;--navy2:#0a2946;--gold:#e8bd62;--gold2:#ffda84;--ink:#142033;--muted:#667085;--line:#dbe3ee;--bg:#f6f8fb;--white:#fff;--shadow:0 24px 70px rgba(6,26,51,.14)}
-    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:Inter,Arial,sans-serif;background:radial-gradient(circle at 12% 8%,rgba(232,189,98,.18),transparent 28%),linear-gradient(135deg,#020b19,#062340 55%,#0a2946);color:#fff;min-height:100vh}.container{width:min(1120px,calc(100% - 36px));margin:auto}.top{padding:32px 0 18px}.brand{display:inline-flex;align-items:center;gap:14px;color:#fff;text-decoration:none}.mark{width:58px;height:58px;border-radius:18px;border:1px solid rgba(255,255,255,.18);display:grid;place-items:center;background:rgba(255,255,255,.08)}.brand strong{font-family:'Playfair Display',serif;font-size:28px;letter-spacing:.12em;text-transform:uppercase}.shell{margin:12px 0 48px;padding:30px;border:1px solid rgba(255,255,255,.16);border-radius:34px;background:rgba(255,255,255,.09);backdrop-filter:blur(18px);box-shadow:0 34px 100px rgba(0,0,0,.30)}.hero{display:grid;grid-template-columns:1fr auto;gap:22px;align-items:start;padding:8px 4px 28px;border-bottom:1px solid rgba(255,255,255,.14)}.eyebrow{display:inline-flex;padding:9px 13px;border-radius:999px;border:1px solid rgba(232,189,98,.38);background:rgba(232,189,98,.12);color:#ffe7a5;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.11em}h1{font-size:clamp(38px,5vw,62px);line-height:1.02;letter-spacing:-.05em;margin:18px 0 14px;max-width:820px} .intro{margin:0;max-width:760px;color:rgba(255,255,255,.82);font-size:17px;line-height:1.75}.pill{border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.08);border-radius:18px;padding:15px 17px;min-width:210px}.pill b{display:block;font-size:16px;margin-bottom:5px}.pill span{display:block;color:rgba(255,255,255,.72);font-size:13px;line-height:1.55}.form{display:grid;gap:22px;padding-top:26px}.panel{background:#fff;color:var(--ink);border:1px solid var(--line);border-radius:26px;padding:26px;box-shadow:var(--shadow)}.head{display:flex;justify-content:space-between;gap:18px;align-items:flex-start;flex-wrap:wrap;margin-bottom:22px}.head h2{font-size:26px;line-height:1.2;letter-spacing:-.03em;margin:0 0 7px}.head p{margin:0;color:var(--muted);line-height:1.65}.tag{display:inline-flex;padding:9px 12px;border-radius:999px;background:#fff6df;color:#73510b;border:1px solid #f3d791;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.08em}.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}.field{display:grid;gap:8px}.field.full{grid-column:1/-1}label{font-size:13px;font-weight:900;color:#344054}input,select,textarea{width:100%;border:1px solid #d8dee8;background:#fbfcfe;border-radius:15px;padding:14px 15px;font:inherit;font-weight:700;color:#101828}textarea{min-height:112px;resize:vertical;line-height:1.55}input:focus,select:focus,textarea:focus{outline:0;border-color:var(--gold);box-shadow:0 0 0 4px rgba(232,189,98,.18)}.services{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}.service{display:flex;gap:12px;align-items:flex-start;border:1px solid var(--line);background:#fbfcfe;border-radius:18px;padding:16px;cursor:pointer;transition:.18s ease}.service:hover{transform:translateY(-1px);border-color:#d5b261;background:#fff9ec}.service input{width:18px;height:18px;margin:2px 0 0;accent-color:#d3a844;flex:0 0 auto}.service b{display:block;font-size:15px;margin-bottom:4px}.service span{display:block;color:var(--muted);font-size:13px;line-height:1.55}.helper{margin:14px 0 0;color:var(--muted);font-size:13px;line-height:1.6}.note{margin-top:18px;padding:15px 16px;border-radius:16px;border:1px dashed #dfc57f;background:#fff8ea;color:#73510b;font-size:13px;line-height:1.65}.actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:22px}.btn{display:inline-flex;align-items:center;justify-content:center;border:0;border-radius:999px;padding:15px 21px;font:inherit;font-weight:900;cursor:pointer;text-decoration:none}.gold{background:linear-gradient(135deg,var(--gold2),var(--gold));color:#071b34}.ghost{background:#eef2f7;color:var(--navy)}.status{display:none;margin-top:18px;border-radius:16px;padding:14px 16px;font-size:14px;line-height:1.6}.status.ok{display:block;background:#ecfdf3;border:1px solid #abefc6;color:#067647}.status.bad{display:block;background:#fef3f2;border:1px solid #fecdca;color:#b42318}.back{display:inline-flex;margin-top:18px;color:#fff6dd;font-weight:900;text-decoration:none}.back:hover{text-decoration:underline}.footer{padding:0 0 34px;color:rgba(255,255,255,.70);font-size:13px;line-height:1.65}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:Inter,Arial,sans-serif;background:radial-gradient(circle at 12% 8%,rgba(232,189,98,.18),transparent 28%),linear-gradient(135deg,#020b19,#062340 55%,#0a2946);color:#fff;min-height:100vh}.container{width:min(1120px,calc(100% - 36px));margin:auto}.top{padding:32px 0 18px}.brand{display:inline-flex;align-items:center;gap:14px;color:#fff;text-decoration:none}.mark{width:58px;height:58px;border-radius:18px;border:1px solid rgba(255,255,255,.18);display:grid;place-items:center;background:rgba(255,255,255,.08)}.brand strong{font-family:'Playfair Display',serif;font-size:28px;letter-spacing:.12em;text-transform:uppercase}.shell{margin:12px 0 48px;padding:30px;border:1px solid rgba(255,255,255,.16);border-radius:34px;background:rgba(255,255,255,.09);backdrop-filter:blur(18px);box-shadow:0 34px 100px rgba(0,0,0,.30)}.hero{display:grid;grid-template-columns:1fr auto;gap:22px;align-items:start;padding:8px 4px 28px;border-bottom:1px solid rgba(255,255,255,.14)}.eyebrow{display:inline-flex;padding:9px 13px;border-radius:999px;border:1px solid rgba(232,189,98,.38);background:rgba(232,189,98,.12);color:#ffe7a5;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.11em}h1{font-size:clamp(38px,5vw,62px);line-height:1.02;letter-spacing:-.05em;margin:18px 0 14px;max-width:820px}.intro{margin:0;max-width:760px;color:rgba(255,255,255,.82);font-size:17px;line-height:1.75}.pill{border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.08);border-radius:18px;padding:15px 17px;min-width:230px}.pill b{display:block;font-size:16px;margin-bottom:5px}.pill span{display:block;color:rgba(255,255,255,.72);font-size:13px;line-height:1.55}.pill a{color:#ffefc2;font-weight:900;text-decoration:none}.pill a:hover{text-decoration:underline}.form{display:grid;gap:22px;padding-top:26px}.panel{background:#fff;color:var(--ink);border:1px solid var(--line);border-radius:26px;padding:26px;box-shadow:var(--shadow)}.head{display:flex;justify-content:space-between;gap:18px;align-items:flex-start;flex-wrap:wrap;margin-bottom:22px}.head h2{font-size:26px;line-height:1.2;letter-spacing:-.03em;margin:0 0 7px}.head p{margin:0;color:var(--muted);line-height:1.65}.tag{display:inline-flex;padding:9px 12px;border-radius:999px;background:#fff6df;color:#73510b;border:1px solid #f3d791;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.08em}.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}.field{display:grid;gap:8px}.field.full{grid-column:1/-1}label{font-size:13px;font-weight:900;color:#344054}input,select,textarea{width:100%;border:1px solid #d8dee8;background:#fbfcfe;border-radius:15px;padding:14px 15px;font:inherit;font-weight:700;color:#101828}textarea{min-height:112px;resize:vertical;line-height:1.55}input:focus,select:focus,textarea:focus{outline:0;border-color:var(--gold);box-shadow:0 0 0 4px rgba(232,189,98,.18)}.services{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}.service{display:flex;gap:12px;align-items:flex-start;border:1px solid var(--line);background:#fbfcfe;border-radius:18px;padding:16px;cursor:pointer;transition:.18s ease}.service:hover{transform:translateY(-1px);border-color:#d5b261;background:#fff9ec}.service input{width:18px;height:18px;margin:2px 0 0;accent-color:#d3a844;flex:0 0 auto}.service b{display:block;font-size:15px;margin-bottom:4px}.service span{display:block;color:var(--muted);font-size:13px;line-height:1.55}.helper{margin:14px 0 0;color:var(--muted);font-size:13px;line-height:1.6}.note{margin-top:18px;padding:15px 16px;border-radius:16px;border:1px dashed #dfc57f;background:#fff8ea;color:#73510b;font-size:13px;line-height:1.65}.note a{color:#73510b;font-weight:900}.actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:22px}.btn{display:inline-flex;align-items:center;justify-content:center;border:0;border-radius:999px;padding:15px 21px;font:inherit;font-weight:900;cursor:pointer;text-decoration:none}.gold{background:linear-gradient(135deg,var(--gold2),var(--gold));color:#071b34}.ghost{background:#eef2f7;color:var(--navy)}.status{display:none;margin-top:18px;border-radius:16px;padding:14px 16px;font-size:14px;line-height:1.6}.status.ok{display:block;background:#ecfdf3;border:1px solid #abefc6;color:#067647}.status.bad{display:block;background:#fef3f2;border:1px solid #fecdca;color:#b42318}.status.wait{display:block;background:#eff8ff;border:1px solid #b2ddff;color:#175cd3}.back{display:inline-flex;margin-top:18px;color:#fff6dd;font-weight:900;text-decoration:none}.back:hover{text-decoration:underline}.footer{padding:0 0 34px;color:rgba(255,255,255,.70);font-size:13px;line-height:1.65}.sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
     @media(max-width:860px){.hero,.grid,.services{grid-template-columns:1fr}.pill{min-width:0}.shell{padding:18px;border-radius:24px}.panel{padding:20px;border-radius:20px}.actions{flex-direction:column}.btn{width:100%}.brand strong{font-size:22px}.mark{width:50px;height:50px}}
   </style>
 </head>
@@ -28,15 +29,19 @@
         <h1>Executive Client Discovery & Engagement Scoping Form</h1>
         <p class="intro">Share the business profile, priority workstreams, and decision context needed for ScaleWise to frame a focused initial consultation.</p>
       </div>
-      <aside class="pill"><b>Prepared for</b><span>Business owners, operators, CPA firms, and finance leaders evaluating ScaleWise support.</span></aside>
+      <aside class="pill"><b>Direct Contact</b><span>Questions before submitting? Email <a href="mailto:info@scalewise.group">info@scalewise.group</a>.</span></aside>
     </section>
 
-    <form id="intakeForm" class="form" novalidate>
+    <form name="client-intake" method="POST" data-netlify="true" netlify-honeypot="bot-field" id="intakeForm" class="form" novalidate>
+      <input type="hidden" name="form-name" value="client-intake">
+      <input type="hidden" name="subject" data-remove-prefix value="New ScaleWise Client Intake Submission">
+      <p class="sr-only"><label>Do not fill this out if you are human: <input name="bot-field"></label></p>
+
       <section class="panel">
         <div class="head"><div><h2>1. Client Details</h2><p>Provide the core information required to structure a decision-oriented ScaleWise review.</p></div><span class="tag">Required Discovery</span></div>
         <div class="grid">
           <div class="field"><label for="fullName">Full Name *</label><input id="fullName" name="Full Name" required placeholder="Enter your full name"></div>
-          <div class="field"><label for="email">Email Address *</label><input id="email" name="Email Address" type="email" required placeholder="name@company.com"></div>
+          <div class="field"><label for="email">Email Address *</label><input id="email" name="email" type="email" required placeholder="name@company.com"></div>
           <div class="field"><label for="phone">Phone Number *</label><input id="phone" name="Phone Number" type="tel" required placeholder="+1 (000) 000-0000"></div>
           <div class="field"><label for="company">Company Name *</label><input id="company" name="Company Name" required placeholder="Enter company name"></div>
           <div class="field"><label for="industry">Industry / Business Type *</label><select id="industry" name="Industry / Business Type" required><option value="">Select industry</option><option>Technology</option><option>Financial Services</option><option>Healthcare</option><option>Manufacturing</option><option>Retail</option><option>Professional Services</option><option>Consulting</option><option>Education</option><option>Real Estate</option><option>Legal</option><option>Energy</option><option>Telecommunications</option><option>Transportation & Logistics</option><option>Media & Entertainment</option><option>Hospitality</option><option>Non-profit</option><option>Government</option><option>Other</option></select></div>
@@ -59,23 +64,110 @@
         </div>
         <p class="helper">Select at least one priority workstream to support an initial ScaleWise scoping review.</p>
         <div class="field full" style="margin-top:18px"><label for="context">Strategic Context & Scoping Considerations</label><textarea id="context" name="Strategic Context & Scoping Considerations" placeholder="Add relevant timelines, systems landscape, operating constraints, decision criteria, or engagement considerations that may shape the initial scope."></textarea></div>
-        <div class="note"><b>Submission note:</b> This page generates a downloadable intake summary and opens a pre-filled email draft to <b>scalewise@scalewise.group</b>. Update the destination email in the script if your preferred inbox changes.</div>
-        <div class="actions"><button class="btn gold" type="submit">Generate Executive Intake Summary</button><button class="btn ghost" type="button" id="resetBtn">Reset Form</button></div>
+        <div class="note"><b>What happens after submission:</b> The intake is submitted through Netlify Forms, a downloadable PDF copy of the completed intake is generated for the client, and ScaleWise can receive email notifications at <a href="mailto:info@scalewise.group">info@scalewise.group</a> once the Netlify form notification is configured.</div>
+        <div class="actions"><button class="btn gold" type="submit" id="submitBtn">Submit Intake & Download PDF</button><button class="btn ghost" type="button" id="resetBtn">Reset Form</button></div>
         <div id="status" class="status" aria-live="polite"></div>
       </section>
     </form>
     <a class="back" href="index.html">← Return to ScaleWise website</a>
   </main>
-  <footer class="container footer">ScaleWise LLC · Client intake page for initial engagement scoping. Interactive email embedding may be limited by email-client security controls; hosting this page on your website is the preferred deployment path.</footer>
+  <footer class="container footer">ScaleWise LLC · Client intake page for initial engagement scoping. Form submissions are designed for Netlify Forms deployment, with PDF generation handled in the browser for the submitter’s copy.</footer>
   <script>
-    const form=document.getElementById('intakeForm'),statusBox=document.getElementById('status'),resetBtn=document.getElementById('resetBtn'),destinationEmail='scalewise@scalewise.group';
+    const form=document.getElementById('intakeForm');
+    const statusBox=document.getElementById('status');
+    const resetBtn=document.getElementById('resetBtn');
+    const submitBtn=document.getElementById('submitBtn');
     const services=()=>Array.from(document.querySelectorAll('input[name="Services"]:checked')).map(el=>el.value);
     const show=(text,type)=>{statusBox.className='status '+type;statusBox.textContent=text};
-    const val=name=>new FormData(form).get(name)||'';
-    function summary(){const s=services();return ['ScaleWise LLC - Executive Client Intake','----------------------------------------','Full Name: '+val('Full Name'),'Email Address: '+val('Email Address'),'Phone Number: '+val('Phone Number'),'Company Name: '+val('Company Name'),'Industry / Business Type: '+val('Industry / Business Type'),'Company Size: '+val('Company Size'),'','Selected Priority Workstreams:',s.map(x=>'- '+x).join('\n'),'','Strategic Business Priority:',val('Strategic Business Priority')||'Not provided','','Strategic Context & Scoping Considerations:',val('Strategic Context & Scoping Considerations')||'Not provided'].join('\n')}
-    function download(name,content){const blob=new Blob([content],{type:'text/plain;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(a.href)}
-    form.addEventListener('submit',e=>{e.preventDefault();if(!form.checkValidity()){form.reportValidity();show('Please complete all required fields before generating the executive intake summary.','bad');return}if(!services().length){show('Please select at least one ScaleWise priority workstream.','bad');return}const text=summary(),company=(val('Company Name')||'prospect').replace(/[^a-z0-9]+/gi,'-').replace(/^-+|-+$/g,'').toLowerCase();download('ScaleWise-Client-Intake-'+company+'.txt',text);location.href='mailto:'+destinationEmail+'?subject='+encodeURIComponent('ScaleWise Client Intake - '+val('Company Name'))+'&body='+encodeURIComponent(text);show('Executive intake summary generated. Your default email application should open with a pre-filled message to ScaleWise.','ok')});
-    resetBtn.addEventListener('click',()=>{form.reset();statusBox.className='status';statusBox.textContent=''})
+    const currentData=()=>new FormData(form);
+    const val=name=>currentData().get(name)||'';
+    const safe=(text,fallback='prospect')=>(text||fallback).toString().replace(/[^a-z0-9]+/gi,'-').replace(/^-+|-+$/g,'').toLowerCase()||fallback;
+
+    function payload(){
+      return {
+        fullName:val('Full Name'),
+        email:val('email'),
+        phone:val('Phone Number'),
+        company:val('Company Name'),
+        industry:val('Industry / Business Type'),
+        size:val('Company Size'),
+        priority:val('Strategic Business Priority')||'Not provided',
+        context:val('Strategic Context & Scoping Considerations')||'Not provided',
+        services:services()
+      };
+    }
+
+    function wrapText(doc,text,x,y,maxWidth,lineHeight){
+      const lines=doc.splitTextToSize(String(text||''),maxWidth);
+      lines.forEach(line=>{if(y>272){doc.addPage();y=20;}doc.text(line,x,y);y+=lineHeight;});
+      return y;
+    }
+
+    function generatePdf(data){
+      const {jsPDF}=window.jspdf;
+      const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+      const navy=[6,26,51],gold=[232,189,98],ink=[20,32,51],muted=[102,112,133];
+      doc.setFillColor(...navy);doc.rect(0,0,210,42,'F');
+      doc.setFillColor(...gold);doc.roundedRect(16,12,4,18,1,1,'F');doc.roundedRect(23,9,4,21,1,1,'F');doc.roundedRect(30,6,4,24,1,1,'F');doc.roundedRect(37,3,4,27,1,1,'F');
+      doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(19);doc.text('ScaleWise',49,19);
+      doc.setFontSize(10);doc.setFont('helvetica','normal');doc.text('Executive Client Discovery & Engagement Scoping Form',49,27);
+      doc.setTextColor(...ink);doc.setFontSize(16);doc.setFont('helvetica','bold');doc.text('Client Intake Summary',16,56);
+      doc.setDrawColor(...gold);doc.setLineWidth(.6);doc.line(16,61,194,61);
+      let y=73;
+      const row=(label,value)=>{doc.setFontSize(10);doc.setFont('helvetica','bold');doc.setTextColor(...navy);doc.text(label,16,y);doc.setFont('helvetica','normal');doc.setTextColor(...ink);y=wrapText(doc,value,68,y,126,5.2);y+=2;};
+      row('Full Name',data.fullName);row('Email Address',data.email);row('Phone Number',data.phone);row('Company Name',data.company);row('Industry',data.industry);row('Company Size',data.size);
+      y+=3;doc.setFont('helvetica','bold');doc.setFontSize(12);doc.setTextColor(...navy);doc.text('Selected Priority Workstreams',16,y);y+=7;
+      doc.setFont('helvetica','normal');doc.setFontSize(10);doc.setTextColor(...ink);
+      data.services.forEach(service=>{if(y>272){doc.addPage();y=20;}doc.text('•',18,y);y=wrapText(doc,service,24,y,166,5.2);y+=1;});
+      y+=4;doc.setFont('helvetica','bold');doc.setFontSize(12);doc.setTextColor(...navy);doc.text('Strategic Business Priority',16,y);y+=7;doc.setFont('helvetica','normal');doc.setFontSize(10);doc.setTextColor(...ink);y=wrapText(doc,data.priority,16,y,178,5.2);
+      y+=6;doc.setFont('helvetica','bold');doc.setFontSize(12);doc.setTextColor(...navy);doc.text('Strategic Context & Scoping Considerations',16,y);y+=7;doc.setFont('helvetica','normal');doc.setFontSize(10);doc.setTextColor(...ink);y=wrapText(doc,data.context,16,y,178,5.2);
+      if(y>258){doc.addPage();y=20;}else{y+=9;}
+      doc.setFillColor(248,244,233);doc.roundedRect(16,y,178,20,2,2,'F');doc.setTextColor(...navy);doc.setFont('helvetica','bold');doc.setFontSize(10);doc.text('ScaleWise Contact',20,y+7);doc.setFont('helvetica','normal');doc.text('info@scalewise.group  |  scalewise.group',20,y+14);
+      const pages=doc.getNumberOfPages();
+      for(let i=1;i<=pages;i++){doc.setPage(i);doc.setFontSize(8);doc.setTextColor(...muted);doc.text(`ScaleWise LLC · Client Intake Summary · Page ${i} of ${pages}`,16,290);}
+      doc.save(`ScaleWise-Client-Intake-${safe(data.company)}.pdf`);
+    }
+
+    async function submitToNetlify(){
+      const formData=currentData();
+      const response=await fetch('/',{
+        method:'POST',
+        headers:{'Content-Type':'application/x-www-form-urlencoded'},
+        body:new URLSearchParams(formData).toString()
+      });
+      if(!response.ok) throw new Error('Submission failed');
+    }
+
+    form.addEventListener('submit',async event=>{
+      event.preventDefault();
+      if(!form.checkValidity()){
+        form.reportValidity();
+        show('Please complete all required fields before submitting the client intake.','bad');
+        return;
+      }
+      if(!services().length){
+        show('Please select at least one ScaleWise priority workstream.','bad');
+        return;
+      }
+      const data=payload();
+      submitBtn.disabled=true;
+      submitBtn.textContent='Submitting Intake...';
+      show('Submitting your intake to ScaleWise and preparing your PDF copy.','wait');
+      try{
+        await submitToNetlify();
+        generatePdf(data);
+        show('Intake submitted successfully. A PDF copy has been downloaded for your records.','ok');
+        form.reset();
+      }catch(error){
+        show('The PDF could be prepared, but the online submission could not be confirmed. Please try again or email info@scalewise.group.','bad');
+        generatePdf(data);
+      }finally{
+        submitBtn.disabled=false;
+        submitBtn.textContent='Submit Intake & Download PDF';
+      }
+    });
+
+    resetBtn.addEventListener('click',()=>{form.reset();statusBox.className='status';statusBox.textContent='';});
   </script>
 </body>
 </html>
