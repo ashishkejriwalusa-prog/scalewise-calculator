@@ -56,5 +56,6 @@ function openModal(id){document.getElementById(id).classList.add('open')}functio
 initChart();renderWatchlist();renderCurrencies();setMarketStatus();selectAsset(selected);setInterval(setMarketStatus,60000);setInterval(()=>{fetchFinnhubQuote(selected);loadCandles(selected.quoteSymbol)},60000);
 </script>
 <script src="analysis-upgrade.js"></script>
+<script src="live-screen-upgrade.js"></script>
 </body>
 </html>
