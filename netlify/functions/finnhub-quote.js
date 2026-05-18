@@ -21,11 +21,33 @@ exports.handler = async function(event) {
     };
   }
 
+  const fxYahooSymbols = {
+    USDINR: 'INR=X',
+    EURUSD: 'EURUSD=X',
+    GBPUSD: 'GBPUSD=X',
+    USDJPY: 'JPY=X',
+    USDCAD: 'CAD=X',
+    AUDUSD: 'AUDUSD=X',
+    NZDUSD: 'NZDUSD=X',
+    USDSGD: 'SGD=X',
+    USDAED: 'AED=X',
+    USDCNY: 'CNY=X',
+    USDRUB: 'RUB=X',
+    USDKWD: 'KWD=X'
+  };
+
+  const isFxSymbol = Object.prototype.hasOwnProperty.call(fxYahooSymbols, symbol);
+  const yahooSymbol = fxYahooSymbols[symbol] || symbol;
+
   function ok(payload) {
     return { statusCode: 200, headers, body: JSON.stringify(payload) };
   }
 
   async function tryFinnhub() {
+    if (isFxSymbol) {
+      throw new Error('FX pairs are routed through the Yahoo Finance currency fallback.');
+    }
+
     const apiKey = process.env.FINNHUB_API_KEY;
     if (!apiKey) {
       throw new Error('FINNHUB_API_KEY is not configured in Netlify environment variables.');
@@ -57,6 +79,7 @@ exports.handler = async function(event) {
 
     return {
       symbol,
+      providerSymbol: symbol,
       name: profile.name || symbol,
       exchange: profile.exchange || '',
       currency: profile.currency || (symbol.endsWith('.NS') || symbol.endsWith('.BO') ? 'INR' : 'USD'),
@@ -75,7 +98,7 @@ exports.handler = async function(event) {
   }
 
   async function tryYahoo() {
-    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1m&range=1d`;
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahooSymbol)}?interval=1m&range=1d`;
     const response = await fetch(url, {
       headers: { 'User-Agent': 'Mozilla/5.0 ScaleWiseDirect/1.0' }
     });
@@ -108,10 +131,11 @@ exports.handler = async function(event) {
 
     return {
       symbol,
-      name: meta.shortName || meta.longName || symbol,
+      providerSymbol: yahooSymbol,
+      name: isFxSymbol ? symbol.replace('USDINR', 'USD/INR').replace('EURUSD', 'EUR/USD').replace('GBPUSD', 'GBP/USD').replace('USDJPY', 'USD/JPY').replace('USDCAD', 'USD/CAD').replace('AUDUSD', 'AUD/USD').replace('NZDUSD', 'NZD/USD').replace('USDSGD', 'USD/SGD').replace('USDAED', 'USD/AED').replace('USDCNY', 'USD/CNY').replace('USDRUB', 'USD/RUB').replace('USDKWD', 'USD/KWD') : (meta.shortName || meta.longName || symbol),
       exchange: meta.exchangeName || '',
       currency: meta.currency || (symbol.endsWith('.NS') || symbol.endsWith('.BO') ? 'INR' : 'USD'),
-      industry: '',
+      industry: isFxSymbol ? 'Currency' : '',
       marketCapitalization: null,
       price,
       open: opens.length ? opens[0] : null,
@@ -121,7 +145,7 @@ exports.handler = async function(event) {
       change,
       changePercent,
       timestamp: meta.regularMarketTime || null,
-      source: 'Yahoo Finance fallback',
+      source: isFxSymbol ? 'Yahoo Finance FX' : 'Yahoo Finance fallback',
       fallbackUsed: true
     };
   }
@@ -140,6 +164,7 @@ exports.handler = async function(event) {
       headers,
       body: JSON.stringify({
         symbol,
+        providerSymbol: yahooSymbol,
         error: error.message || 'No quote data returned from Finnhub or Yahoo Finance.'
       })
     };
