@@ -22,11 +22,33 @@ exports.handler = async function(event) {
     return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing symbol query parameter.' }) };
   }
 
+  const fxYahooSymbols = {
+    USDINR: 'INR=X',
+    EURUSD: 'EURUSD=X',
+    GBPUSD: 'GBPUSD=X',
+    USDJPY: 'JPY=X',
+    USDCAD: 'CAD=X',
+    AUDUSD: 'AUDUSD=X',
+    NZDUSD: 'NZDUSD=X',
+    USDSGD: 'SGD=X',
+    USDAED: 'AED=X',
+    USDCNY: 'CNY=X',
+    USDRUB: 'RUB=X',
+    USDKWD: 'KWD=X'
+  };
+
+  const isFxSymbol = Object.prototype.hasOwnProperty.call(fxYahooSymbols, symbol);
+  const yahooSymbol = fxYahooSymbols[symbol] || symbol;
+
   function formatResponse(payload) {
     return { statusCode: 200, headers, body: JSON.stringify(payload) };
   }
 
   async function tryFinnhub() {
+    if (isFxSymbol) {
+      throw new Error('FX pairs are routed through the Yahoo Finance currency fallback.');
+    }
+
     const apiKey = process.env.FINNHUB_API_KEY;
     if (!apiKey) {
       throw new Error('FINNHUB_API_KEY is not configured in Netlify environment variables.');
@@ -59,6 +81,7 @@ exports.handler = async function(event) {
 
     return {
       symbol,
+      providerSymbol: symbol,
       status: 'ok',
       resolution,
       from,
@@ -84,7 +107,7 @@ exports.handler = async function(event) {
     if (['1m', '5m', '15m', '30m', '60m'].includes(interval)) range = '1mo';
     if (interval === '1wk') range = '5y';
 
-    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=${encodeURIComponent(interval)}&range=${encodeURIComponent(range)}`;
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahooSymbol)}?interval=${encodeURIComponent(interval)}&range=${encodeURIComponent(range)}`;
     const response = await fetch(url, {
       headers: { 'User-Agent': 'Mozilla/5.0 ScaleWiseDirect/1.0' }
     });
@@ -128,12 +151,13 @@ exports.handler = async function(event) {
 
     return {
       symbol,
+      providerSymbol: yahooSymbol,
       status: 'ok',
       resolution,
       from,
       to,
       candles,
-      source: 'Yahoo Finance fallback',
+      source: isFxSymbol ? 'Yahoo Finance FX' : 'Yahoo Finance fallback',
       fallbackUsed: true,
       interval,
       range
@@ -155,10 +179,11 @@ exports.handler = async function(event) {
       headers,
       body: JSON.stringify({
         symbol,
+        providerSymbol: yahooSymbol,
         status: 'no_data',
         candles: [],
-        source: 'Finnhub + Yahoo fallback',
-        message: error.message || 'No candle data returned from either provider. Try exact symbols like HDFCBANK.NS, NHPC.NS, RELIANCE.NS, TCS.NS, AAPL, or MSFT.'
+        source: isFxSymbol ? 'Yahoo Finance FX' : 'Finnhub + Yahoo fallback',
+        message: error.message || 'No candle data returned from either provider. Try exact symbols like USDINR, EURUSD, GBPUSD, USDJPY, HDFCBANK.NS, NHPC.NS, RELIANCE.NS, TCS.NS, AAPL, or MSFT.'
       })
     };
   }
