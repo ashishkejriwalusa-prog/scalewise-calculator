@@ -3,7 +3,9 @@
   let streamReconnectTimer = null;
   let streamHeartbeatTimer = null;
   let activeStreamSymbol = '';
-  const liveTradeRows = [];
+  let activeLiveCandle = null;
+  let lastStreamQuote = null;
+  let latestVisualPriceLine = null;
   const selectedCurrencyPairsKey = 'scalewise-direct-multi-currency-v1';
   const availableCurrencyPairs = [
     { symbol: 'USDINR', label: 'USD/INR', note: 'Dollar vs Indian Rupee' },
@@ -48,6 +50,11 @@
     return typeof selected !== 'undefined' ? selected : null;
   }
 
+  function selectedResolution() {
+    const resolution = document.getElementById('resolutionSelect');
+    return resolution ? resolution.value : 'D';
+  }
+
   function isMarketLiveForSelected() {
     if (typeof marketModeForSelected === 'function') return marketModeForSelected();
     const asset = selectedAsset();
@@ -61,26 +68,24 @@
     const style = document.createElement('style');
     style.id = 'streamingCurrencyUpgradeStyles';
     style.textContent = `
+      .liveChartStreamOverlay{position:absolute;left:18px;top:76px;z-index:12;display:flex;align-items:center;gap:10px;flex-wrap:wrap;pointer-events:none}
+      .liveChartStreamBadge{display:inline-flex;align-items:center;gap:8px;padding:9px 12px;border-radius:999px;border:1px solid rgba(34,197,94,.44);background:rgba(5,11,20,.88);backdrop-filter:blur(10px);font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.08em;color:#86efac;box-shadow:0 18px 40px rgba(0,0,0,.28)}
+      .liveChartStreamBadge.waiting{color:#fde68a;border-color:rgba(245,158,11,.42)}
+      .liveChartStreamBadge.off{color:#fca5a5;border-color:rgba(239,68,68,.42)}
+      .liveChartStreamPulse{width:9px;height:9px;border-radius:50%;background:currentColor;animation:streamPulse 1.45s infinite}
+      .liveChartStreamBadge.waiting .liveChartStreamPulse,.liveChartStreamBadge.off .liveChartStreamPulse{animation:none}
+      .liveChartMicroPrice{display:inline-flex;align-items:center;gap:8px;padding:9px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:rgba(5,11,20,.88);backdrop-filter:blur(10px);font-size:13px;font-weight:900;color:#f8fafc;box-shadow:0 18px 40px rgba(0,0,0,.28)}
+      .liveChartMicroPrice .pos{color:#86efac}.liveChartMicroPrice .neg{color:#fca5a5}
+      .liveChartStreamFlash{animation:chartQuoteFlash .7s ease-out}
+      @keyframes streamPulse{0%{box-shadow:0 0 0 0 rgba(34,197,94,.58)}70%{box-shadow:0 0 0 12px rgba(34,197,94,0)}100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}}
+      @keyframes chartQuoteFlash{0%{filter:brightness(1.55)}100%{filter:brightness(1)}}
       .streamPanel{background:#08111f;border:1px solid var(--line);border-radius:22px;padding:18px;margin-top:18px}
       .streamHeader{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap}
       .streamHeader h3{margin:8px 0 4px;font-size:24px;letter-spacing:-.03em}
       .streamHeader p{margin:0;color:#cbd5e1;font-size:14px;line-height:1.6}
       .streamStatus{display:inline-flex;align-items:center;gap:8px;padding:8px 11px;border-radius:999px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.06em;color:#cbd5e1}
       .streamStatus.live{color:#86efac;background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.4)}
-      .streamStatus.waiting{color:#fde68a;background:rgba(245,158,11,.12);border-color:rgba(245,158,11,.35)}
-      .streamStatus.off{color:#fca5a5;background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.35)}
       .streamPulse{width:8px;height:8px;border-radius:50%;background:currentColor;animation:streamPulse 1.6s infinite}
-      .streamStatus.off .streamPulse,.streamStatus.waiting .streamPulse{animation:none}
-      @keyframes streamPulse{0%{box-shadow:0 0 0 0 rgba(34,197,94,.55)}70%{box-shadow:0 0 0 10px rgba(34,197,94,0)}100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}}
-      .streamMetrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:16px}
-      .streamMetric{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:18px;padding:14px}
-      .streamMetric span{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8;font-weight:900}
-      .streamMetric b{display:block;font-size:22px;margin-top:8px}
-      .streamTape{display:grid;grid-template-columns:1fr;gap:10px;margin-top:16px}
-      .streamRow{display:grid;grid-template-columns:140px 1fr 120px 120px 140px;gap:12px;align-items:center;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:12px 14px;color:#d8e1ef;font-size:14px}
-      .streamRow.head{background:#0b1728;color:#94a3b8;text-transform:uppercase;font-size:11px;font-weight:900;letter-spacing:.08em}
-      .streamRow .up{color:#86efac;font-weight:900}.streamRow .down{color:#fca5a5;font-weight:900}
-      .streamHelper{font-size:12px;color:#94a3b8;margin-top:12px;line-height:1.6}
       .multiCurrencyWrap{display:grid;gap:16px}
       .currencySelectorGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
       .currencyChoice{display:flex;align-items:flex-start;gap:10px;background:#08111f;border:1px solid var(--line);border-radius:16px;padding:13px;cursor:pointer}
@@ -92,100 +97,44 @@
       .currencyCard h4{margin:8px 0;font-size:19px}.currencyCard .pairPrice{font-size:26px;font-weight:900}.currencyCard .pairMove{font-size:14px;font-weight:900;margin-top:6px}.currencyCard .pairMove.pos{color:#86efac}.currencyCard .pairMove.neg{color:#fca5a5}
       .currencyCardMeta{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}.currencyCardMeta span{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8;font-weight:900}.currencyCardMeta b{display:block;margin-top:5px;font-size:14px}
       .currencyStatusLine{font-size:12px;color:#94a3b8;margin-top:8px}
-      @media(max-width:1100px){.streamMetrics,.currencySelectorGrid,.currencyCompareGrid{grid-template-columns:1fr 1fr}.streamRow{grid-template-columns:1fr 1fr}.streamRow span:nth-child(n+3){font-size:13px}}
-      @media(max-width:720px){.streamMetrics,.currencySelectorGrid,.currencyCompareGrid{grid-template-columns:1fr}.streamRow{grid-template-columns:1fr}.streamRow.head{display:none}}
+      @media(max-width:1100px){.currencySelectorGrid,.currencyCompareGrid{grid-template-columns:1fr 1fr}}
+      @media(max-width:720px){.liveChartStreamOverlay{left:12px;right:12px;top:76px}.liveChartStreamBadge,.liveChartMicroPrice{font-size:11px;padding:8px 10px}.currencySelectorGrid,.currencyCompareGrid{grid-template-columns:1fr}}
     `;
     document.head.appendChild(style);
   }
 
-  function ensureLiveStreamingPanel() {
+  function ensureLiveChartOverlay() {
     ensureStyles();
     const terminal = document.getElementById('terminal');
-    const shell = terminal && terminal.parentElement;
-    if (!shell || document.getElementById('liveStreamingPanel')) return;
-    const panel = document.createElement('section');
-    panel.id = 'liveStreamingPanel';
-    panel.className = 'streamPanel';
-    panel.innerHTML = `
-      <div class="streamHeader">
-        <div>
-          <span class="streamStatus waiting" id="marketStreamStatus"><span class="streamPulse"></span><span id="marketStreamStatusText">Waiting for market session</span></span>
-          <h3>Live Streaming Screen</h3>
-          <p id="marketStreamDescription">The screen activates live quote streaming for the selected asset while the relevant market is open.</p>
-        </div>
-        <div class="currencyActions">
-          <button class="btn light" id="restartLiveStreamBtn" type="button">Restart Stream</button>
-          <button class="btn gold" id="openMultiCurrencyBtn" type="button">Multi-Currency View</button>
-        </div>
-      </div>
-      <div class="streamMetrics">
-        <div class="streamMetric"><span>Streaming Symbol</span><b id="streamingSymbol">—</b></div>
-        <div class="streamMetric"><span>Live Price</span><b id="streamingPrice">—</b></div>
-        <div class="streamMetric"><span>Daily Move</span><b id="streamingMove">—</b></div>
-        <div class="streamMetric"><span>Last Stream Update</span><b id="streamingUpdated">—</b></div>
-      </div>
-      <div class="streamTape" id="liveStreamTape">
-        <div class="streamRow head"><span>Time</span><span>Symbol</span><span>Price</span><span>Move</span><span>Source</span></div>
-        <div class="streamRow"><span>—</span><span>Waiting for stream</span><span>—</span><span>—</span><span>—</span></div>
-      </div>
-      <div class="streamHelper">Live streaming uses a server-sent quote stream window that reconnects automatically. If the data provider is delayed or a symbol is unsupported, the stream panel falls back gracefully.</div>`;
-    shell.appendChild(panel);
-    const restart = document.getElementById('restartLiveStreamBtn');
-    if (restart) restart.onclick = () => startStreamingForSelected(true);
-    const multi = document.getElementById('openMultiCurrencyBtn');
-    if (multi) multi.onclick = () => activateCurrencyTabAndScroll();
+    if (!terminal || document.getElementById('liveChartStreamOverlay')) return;
+    const overlay = document.createElement('div');
+    overlay.id = 'liveChartStreamOverlay';
+    overlay.className = 'liveChartStreamOverlay';
+    overlay.innerHTML = `
+      <span class="liveChartStreamBadge waiting" id="liveChartStreamBadge"><span class="liveChartStreamPulse"></span><span id="liveChartStreamText">Streaming ready</span></span>
+      <span class="liveChartMicroPrice" id="liveChartMicroPrice">Waiting for live quote</span>`;
+    terminal.appendChild(overlay);
   }
 
-  function activateCurrencyTabAndScroll() {
-    const buttons = document.querySelectorAll('#marketTabs .tabBtn');
-    const currencyButton = Array.from(buttons).find((button) => button.textContent && button.textContent.includes('Currency'));
-    if (currencyButton && typeof currencyButton.click === 'function') currencyButton.click();
-    setTimeout(() => {
-      const target = document.getElementById('multiCurrencyPanel') || document.getElementById('currencyTab');
-      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 140);
+  function setChartStreamStatus(kind, text) {
+    ensureLiveChartOverlay();
+    const badge = document.getElementById('liveChartStreamBadge');
+    const textNode = document.getElementById('liveChartStreamText');
+    if (!badge || !textNode) return;
+    badge.classList.remove('waiting', 'off');
+    if (kind === 'waiting' || kind === 'off') badge.classList.add(kind);
+    textNode.textContent = text;
   }
 
-  function setStreamStatus(kind, text) {
-    const status = document.getElementById('marketStreamStatus');
-    const statusText = document.getElementById('marketStreamStatusText');
-    if (!status || !statusText) return;
-    status.classList.remove('live', 'waiting', 'off');
-    status.classList.add(kind);
-    statusText.textContent = text;
-  }
-
-  function streamQuoteLabel(data) {
-    return money(data.price, data.currency);
-  }
-
-  function appendStreamRow(data) {
-    liveTradeRows.unshift(data);
-    liveTradeRows.splice(8);
-    const tape = document.getElementById('liveStreamTape');
-    if (!tape) return;
-    const head = '<div class="streamRow head"><span>Time</span><span>Symbol</span><span>Price</span><span>Move</span><span>Source</span></div>';
-    const body = liveTradeRows.map((item) => {
-      const move = Number(item.changePercent);
-      const cls = Number.isFinite(move) && move < 0 ? 'down' : 'up';
-      const when = item.timestamp ? new Date(Number(item.timestamp) * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-      return `<div class="streamRow"><span>${esc(when)}</span><span><b>${esc(item.symbol || '')}</b></span><span>${esc(streamQuoteLabel(item))}</span><span class="${cls}">${esc(percent(item.changePercent))}</span><span>${esc(item.source || 'Live stream')}</span></div>`;
-    }).join('');
-    tape.innerHTML = head + body;
-  }
-
-  function updateStreamingMetrics(data) {
-    const symbol = document.getElementById('streamingSymbol');
-    const price = document.getElementById('streamingPrice');
-    const move = document.getElementById('streamingMove');
-    const updated = document.getElementById('streamingUpdated');
-    if (symbol) symbol.textContent = data.symbol || activeStreamSymbol || '—';
-    if (price) price.textContent = streamQuoteLabel(data);
-    if (move) {
-      move.textContent = percent(data.changePercent);
-      move.className = Number(data.changePercent) < 0 ? 'neg' : 'pos';
-    }
-    if (updated) updated.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  function updateChartMicroPrice(data) {
+    const price = document.getElementById('liveChartMicroPrice');
+    if (!price) return;
+    const sign = Number(data.changePercent) >= 0 ? '+' : '';
+    const cls = Number(data.changePercent) < 0 ? 'neg' : 'pos';
+    price.innerHTML = `${esc(money(data.price, data.currency))} <span class="${cls}">${sign}${esc(number(data.changePercent))}%</span>`;
+    price.classList.remove('liveChartStreamFlash');
+    void price.offsetWidth;
+    price.classList.add('liveChartStreamFlash');
   }
 
   function closeStream() {
@@ -199,68 +148,102 @@
 
   function scheduleReconnect() {
     if (streamReconnectTimer) clearTimeout(streamReconnectTimer);
-    streamReconnectTimer = setTimeout(() => {
-      startStreamingForSelected(false);
-    }, 1400);
+    streamReconnectTimer = setTimeout(() => startStreamingForSelected(false), 1200);
   }
 
-  function startStreamingForSelected(force) {
-    ensureLiveStreamingPanel();
-    const asset = selectedAsset();
-    const mode = isMarketLiveForSelected();
-    const symbol = asset && asset.quoteSymbol ? String(asset.quoteSymbol).trim().toUpperCase() : '';
-    const description = document.getElementById('marketStreamDescription');
-    if (!symbol) {
-      closeStream();
-      setStreamStatus('off', 'No symbol selected');
-      if (description) description.textContent = 'Select a stock, ETF, or currency pair to activate the live stream screen.';
-      return;
-    }
-    if (!mode.open && !force) {
-      closeStream();
-      activeStreamSymbol = symbol;
-      setStreamStatus('waiting', `${mode.label || 'Market closed'}`);
-      if (description) description.textContent = `Streaming is ready for ${symbol}; it activates automatically once the relevant market session is live.`;
-      const streamingSymbol = document.getElementById('streamingSymbol');
-      if (streamingSymbol) streamingSymbol.textContent = symbol;
-      return;
-    }
-    if (liveEventSource && activeStreamSymbol === symbol && !force) return;
-    closeStream();
-    activeStreamSymbol = symbol;
-    setStreamStatus('live', `${mode.label || 'Streaming live'}`);
-    if (description) description.textContent = `Live streaming quote updates are active for ${symbol}. The quote window reconnects automatically to keep the screen moving during market hours.`;
-    const streamingSymbol = document.getElementById('streamingSymbol');
-    if (streamingSymbol) streamingSymbol.textContent = symbol;
+  function secondsForResolution(resolution) {
+    if (resolution === '5') return 5 * 60;
+    if (resolution === '15') return 15 * 60;
+    if (resolution === '30') return 30 * 60;
+    if (resolution === '60') return 60 * 60;
+    if (resolution === 'W') return 7 * 24 * 60 * 60;
+    return 24 * 60 * 60;
+  }
+
+  function bucketTimeForQuote(timestamp, resolution) {
+    const seconds = secondsForResolution(resolution);
+    const safeTimestamp = Number.isFinite(Number(timestamp)) ? Number(timestamp) : Math.floor(Date.now() / 1000);
+    return Math.floor(safeTimestamp / seconds) * seconds;
+  }
+
+  async function seedActiveLiveCandle(symbol) {
     try {
-      liveEventSource = new EventSource('/.netlify/functions/live-quote-stream?symbol=' + encodeURIComponent(symbol));
-      liveEventSource.addEventListener('status', (event) => {
-        try {
-          const payload = JSON.parse(event.data || '{}');
-          if (payload.status === 'reconnect') scheduleReconnect();
-        } catch (error) {}
-      });
-      liveEventSource.addEventListener('quote', (event) => {
-        try {
-          const data = JSON.parse(event.data || '{}');
-          updateStreamingMetrics(data);
-          appendStreamRow(data);
-          syncLiveQuoteCard(data);
-          if (streamHeartbeatTimer) clearTimeout(streamHeartbeatTimer);
-          streamHeartbeatTimer = setTimeout(() => setStreamStatus('waiting', 'Reconnecting stream'), 9000);
-        } catch (error) {}
-      });
-      liveEventSource.addEventListener('stream-error', () => {
-        setStreamStatus('waiting', 'Stream data retrying');
-      });
-      liveEventSource.onerror = () => {
-        setStreamStatus('waiting', 'Stream reconnecting');
-        closeStream();
-        scheduleReconnect();
+      const resolution = selectedResolution();
+      const days = resolution === 'D' ? 365 : resolution === 'W' ? 1500 : 30;
+      const response = await fetch('/.netlify/functions/finnhub-candles?symbol=' + encodeURIComponent(symbol) + '&resolution=' + encodeURIComponent(resolution) + '&days=' + days);
+      const data = await response.json();
+      if (!response.ok || data.error || !data.candles || !data.candles.length) throw new Error(data.error || 'No seed candles returned.');
+      const latest = data.candles[data.candles.length - 1];
+      activeLiveCandle = {
+        time: latest.time,
+        open: Number(latest.open),
+        high: Number(latest.high),
+        low: Number(latest.low),
+        close: Number(latest.close)
       };
     } catch (error) {
-      setStreamStatus('off', 'Streaming unavailable');
-      scheduleReconnect();
+      activeLiveCandle = null;
+    }
+  }
+
+  function liveCandleFromQuote(data) {
+    const price = Number(data.price);
+    if (!Number.isFinite(price)) return null;
+    const resolution = selectedResolution();
+    const candidateTime = bucketTimeForQuote(data.timestamp, resolution);
+    if (!activeLiveCandle) {
+      const quoteOpen = Number(data.open);
+      const quoteHigh = Number(data.high);
+      const quoteLow = Number(data.low);
+      activeLiveCandle = {
+        time: candidateTime,
+        open: Number.isFinite(quoteOpen) ? quoteOpen : price,
+        high: Number.isFinite(quoteHigh) ? quoteHigh : price,
+        low: Number.isFinite(quoteLow) ? quoteLow : price,
+        close: price
+      };
+      return activeLiveCandle;
+    }
+    const sameBucket = Number(activeLiveCandle.time) === Number(candidateTime) || resolution === 'D' || resolution === 'W';
+    if (!sameBucket) {
+      activeLiveCandle = {
+        time: candidateTime,
+        open: price,
+        high: price,
+        low: price,
+        close: price
+      };
+      return activeLiveCandle;
+    }
+    activeLiveCandle = {
+      time: activeLiveCandle.time,
+      open: activeLiveCandle.open,
+      high: Math.max(Number(activeLiveCandle.high), price),
+      low: Math.min(Number(activeLiveCandle.low), price),
+      close: price
+    };
+    return activeLiveCandle;
+  }
+
+  function updateChartVisualsFromQuote(data) {
+    lastStreamQuote = data;
+    updateChartMicroPrice(data);
+    const candle = liveCandleFromQuote(data);
+    if (candle && typeof candleSeries !== 'undefined' && candleSeries && typeof candleSeries.update === 'function') {
+      candleSeries.update(candle);
+    }
+    if (typeof candleSeries !== 'undefined' && candleSeries && typeof candleSeries.createPriceLine === 'function') {
+      if (latestVisualPriceLine && typeof candleSeries.removePriceLine === 'function') {
+        try { candleSeries.removePriceLine(latestVisualPriceLine); } catch (error) {}
+      }
+      latestVisualPriceLine = candleSeries.createPriceLine({
+        price: Number(data.price),
+        color: Number(data.changePercent) < 0 ? '#ef4444' : '#22c55e',
+        lineWidth: 1,
+        lineStyle: 2,
+        axisLabelVisible: true,
+        title: 'LIVE'
+      });
     }
   }
 
@@ -275,6 +258,57 @@
     if (forecastPrice) forecastPrice.textContent = money(data.price, data.currency);
     if (typeof renderForecast === 'function') renderForecast();
     if (typeof renderAnalysis === 'function') renderAnalysis();
+  }
+
+  async function startStreamingForSelected(force) {
+    ensureLiveChartOverlay();
+    const asset = selectedAsset();
+    const mode = isMarketLiveForSelected();
+    const symbol = asset && asset.quoteSymbol ? String(asset.quoteSymbol).trim().toUpperCase() : '';
+    if (!symbol) {
+      closeStream();
+      setChartStreamStatus('off', 'No symbol selected');
+      return;
+    }
+    if (!mode.open) {
+      closeStream();
+      activeStreamSymbol = symbol;
+      setChartStreamStatus('waiting', `${mode.label || 'Market closed'} — live chart ready`);
+      return;
+    }
+    if (liveEventSource && activeStreamSymbol === symbol && !force) return;
+    closeStream();
+    activeStreamSymbol = symbol;
+    activeLiveCandle = null;
+    await seedActiveLiveCandle(symbol);
+    setChartStreamStatus('live', `${mode.label || 'Streaming live'} — chart moving`);
+    try {
+      liveEventSource = new EventSource('/.netlify/functions/live-quote-stream?symbol=' + encodeURIComponent(symbol));
+      liveEventSource.addEventListener('status', (event) => {
+        try {
+          const payload = JSON.parse(event.data || '{}');
+          if (payload.status === 'reconnect') scheduleReconnect();
+        } catch (error) {}
+      });
+      liveEventSource.addEventListener('quote', (event) => {
+        try {
+          const data = JSON.parse(event.data || '{}');
+          updateChartVisualsFromQuote(data);
+          syncLiveQuoteCard(data);
+          if (streamHeartbeatTimer) clearTimeout(streamHeartbeatTimer);
+          streamHeartbeatTimer = setTimeout(() => setChartStreamStatus('waiting', 'Stream reconnecting'), 9000);
+        } catch (error) {}
+      });
+      liveEventSource.addEventListener('stream-error', () => setChartStreamStatus('waiting', 'Live chart retrying'));
+      liveEventSource.onerror = () => {
+        setChartStreamStatus('waiting', 'Live chart reconnecting');
+        closeStream();
+        scheduleReconnect();
+      };
+    } catch (error) {
+      setChartStreamStatus('off', 'Live chart stream unavailable');
+      scheduleReconnect();
+    }
   }
 
   function readSelectedCurrencyPairs() {
@@ -409,11 +443,17 @@
     install();
   }
 
-  ensureLiveStreamingPanel();
+  ensureLiveChartOverlay();
   ensureMultiCurrencyPanel();
   setTimeout(() => startStreamingForSelected(false), 1100);
   setTimeout(() => loadMultiCurrencyQuotes(), 1300);
-  wrapGlobal('selectAsset', () => startStreamingForSelected(true));
+  wrapGlobal('selectAsset', () => startStreamingForSelected(false));
+  wrapGlobal('reloadCandles', async () => {
+    activeLiveCandle = null;
+    const asset = selectedAsset();
+    if (asset && asset.quoteSymbol) await seedActiveLiveCandle(asset.quoteSymbol);
+    if (lastStreamQuote) updateChartVisualsFromQuote(lastStreamQuote);
+  });
   wrapGlobal('showTab', () => {
     const currencyTab = document.getElementById('currencyTab');
     if (currencyTab && currencyTab.classList.contains('active')) loadMultiCurrencyQuotes();
