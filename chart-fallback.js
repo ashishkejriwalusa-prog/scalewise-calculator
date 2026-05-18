@@ -1,17 +1,17 @@
 // ScaleWise Direct chart fallback override
-// This script automatically falls back to Yahoo Finance candles when Finnhub candles fail.
+// Automatically falls back to Yahoo Finance candles when Finnhub candles fail.
 (function () {
   function sourceLabel(source) {
     return source === 'Yahoo Finance fallback' ? 'Yahoo candles loaded' : 'Finnhub candles loaded';
   }
 
   async function loadCandlesWithFallback(symbol) {
-    if (!window.candleSeries || !window.volumeSeries || !window.chart) {
+    if (typeof candleSeries === 'undefined' || typeof volumeSeries === 'undefined' || typeof chart === 'undefined' || !candleSeries || !volumeSeries || !chart) {
       return;
     }
 
-    if (typeof window.setChartState === 'function') {
-      window.setChartState('Loading candles for ' + symbol, true);
+    if (typeof setChartState === 'function') {
+      setChartState('Loading candles for ' + symbol, true);
     }
 
     const resolutionEl = document.getElementById('resolutionSelect');
@@ -61,12 +61,12 @@
           };
         });
 
-      window.candleSeries.setData(candles);
-      window.volumeSeries.setData(volumes);
-      window.chart.timeScale().fitContent();
+      candleSeries.setData(candles);
+      volumeSeries.setData(volumes);
+      chart.timeScale().fitContent();
 
-      if (typeof window.setChartState === 'function') {
-        window.setChartState(sourceLabel(source) + ' · ' + symbol, true);
+      if (typeof setChartState === 'function') {
+        setChartState(sourceLabel(source) + ' · ' + symbol, true);
       }
 
       const subtitle = document.getElementById('chartSubTitle');
@@ -74,29 +74,29 @@
         subtitle.textContent = symbol + ' · ' + sourceLabel(source);
       }
     } catch (error) {
-      window.candleSeries.setData([]);
-      window.volumeSeries.setData([]);
-      if (typeof window.setChartState === 'function') {
-        window.setChartState(error.message || 'No chart data', false);
+      candleSeries.setData([]);
+      volumeSeries.setData([]);
+      if (typeof setChartState === 'function') {
+        setChartState(error.message || 'No chart data', false);
       }
     }
   }
 
   function installOverride() {
-    if (typeof window.loadCandles !== 'function') {
+    if (typeof loadCandles !== 'function') {
       setTimeout(installOverride, 100);
       return;
     }
 
-    window.loadCandles = loadCandlesWithFallback;
-    window.reloadCandles = function () {
-      if (window.selected && window.selected.quoteSymbol) {
-        loadCandlesWithFallback(window.selected.quoteSymbol);
+    loadCandles = loadCandlesWithFallback;
+    reloadCandles = function () {
+      if (typeof selected !== 'undefined' && selected && selected.quoteSymbol) {
+        loadCandlesWithFallback(selected.quoteSymbol);
       }
     };
 
-    if (window.selected && window.selected.quoteSymbol) {
-      loadCandlesWithFallback(window.selected.quoteSymbol);
+    if (typeof selected !== 'undefined' && selected && selected.quoteSymbol) {
+      loadCandlesWithFallback(selected.quoteSymbol);
     }
   }
 
