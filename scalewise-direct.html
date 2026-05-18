@@ -55,5 +55,6 @@ function setMarketStatus(){const now=new Date(),d=now.getUTCDay(),m=now.getUTCHo
 function openModal(id){document.getElementById(id).classList.add('open')}function closeModal(id){document.getElementById(id).classList.remove('open')}
 initChart();renderWatchlist();renderCurrencies();setMarketStatus();selectAsset(selected);setInterval(setMarketStatus,60000);setInterval(()=>{fetchFinnhubQuote(selected);loadCandles(selected.quoteSymbol)},60000);
 </script>
+<script src="analysis-upgrade.js"></script>
 </body>
 </html>
