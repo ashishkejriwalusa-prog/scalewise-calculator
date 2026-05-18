@@ -10,26 +10,26 @@ exports.handler = async function(event) {
     return { statusCode: 200, headers, body: JSON.stringify({ ok: true }) };
   }
 
-  try {
+  const params = event.queryStringParameters || {};
+  const symbol = (params.symbol || '').trim().toUpperCase();
+  const resolution = (params.resolution || 'D').trim();
+  const now = Math.floor(Date.now() / 1000);
+  const days = Number(params.days || 365);
+  const from = Number(params.from || now - days * 24 * 60 * 60);
+  const to = Number(params.to || now);
+
+  if (!symbol) {
+    return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing symbol query parameter.' }) };
+  }
+
+  function formatResponse(payload) {
+    return { statusCode: 200, headers, body: JSON.stringify(payload) };
+  }
+
+  async function tryFinnhub() {
     const apiKey = process.env.FINNHUB_API_KEY;
     if (!apiKey) {
-      return {
-        statusCode: 500,
-        headers,
-        body: JSON.stringify({ error: 'FINNHUB_API_KEY is not configured in Netlify environment variables.' })
-      };
-    }
-
-    const params = event.queryStringParameters || {};
-    const symbol = (params.symbol || '').trim().toUpperCase();
-    const resolution = (params.resolution || 'D').trim();
-    const now = Math.floor(Date.now() / 1000);
-    const days = Number(params.days || 365);
-    const from = Number(params.from || now - days * 24 * 60 * 60);
-    const to = Number(params.to || now);
-
-    if (!symbol) {
-      return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing symbol query parameter.' }) };
+      throw new Error('FINNHUB_API_KEY is not configured in Netlify environment variables.');
     }
 
     const url = `https://finnhub.io/api/v1/stock/candle?symbol=${encodeURIComponent(symbol)}&resolution=${encodeURIComponent(resolution)}&from=${from}&to=${to}&token=${apiKey}`;
@@ -37,20 +37,11 @@ exports.handler = async function(event) {
     const data = await response.json();
 
     if (!response.ok) {
-      return { statusCode: response.status, headers, body: JSON.stringify({ error: 'Finnhub candle request failed.', details: data }) };
+      throw new Error('Finnhub candle request failed.');
     }
 
-    if (data.s !== 'ok') {
-      return {
-        statusCode: 200,
-        headers,
-        body: JSON.stringify({
-          symbol,
-          status: data.s || 'no_data',
-          candles: [],
-          message: 'No candle data returned for this symbol/resolution. Try exact ticker such as NHPC.NS, RELIANCE.NS, AAPL, MSFT, or use another data provider for full NSE/BSE coverage.'
-        })
-      };
+    if (data.s !== 'ok' || !Array.isArray(data.t) || data.t.length === 0) {
+      throw new Error('Finnhub returned no candle data for this symbol/resolution.');
     }
 
     const candles = data.t.map((time, index) => ({
@@ -60,14 +51,115 @@ exports.handler = async function(event) {
       low: data.l[index],
       close: data.c[index],
       volume: data.v ? data.v[index] : null
-    }));
+    })).filter(candle => [candle.open, candle.high, candle.low, candle.close].every(value => typeof value === 'number' && Number.isFinite(value)));
 
+    if (!candles.length) {
+      throw new Error('Finnhub candle data was empty after validation.');
+    }
+
+    return {
+      symbol,
+      status: 'ok',
+      resolution,
+      from,
+      to,
+      candles,
+      source: 'Finnhub'
+    };
+  }
+
+  async function tryYahoo() {
+    const intervalMap = {
+      '1': '1m',
+      '5': '5m',
+      '15': '15m',
+      '30': '30m',
+      '60': '60m',
+      'D': '1d',
+      'W': '1wk'
+    };
+
+    const interval = intervalMap[resolution] || resolution || '1d';
+    let range = '1y';
+    if (['1m', '5m', '15m', '30m', '60m'].includes(interval)) range = '1mo';
+    if (interval === '1wk') range = '5y';
+
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=${encodeURIComponent(interval)}&range=${encodeURIComponent(range)}`;
+    const response = await fetch(url, {
+      headers: { 'User-Agent': 'Mozilla/5.0 ScaleWiseDirect/1.0' }
+    });
+    const data = await response.json();
+
+    if (!response.ok || !data.chart || data.chart.error) {
+      throw new Error(data.chart && data.chart.error ? data.chart.error.description : 'Yahoo candle request failed.');
+    }
+
+    const result = data.chart.result && data.chart.result[0];
+    const timestamps = result && result.timestamp;
+    const quote = result && result.indicators && result.indicators.quote && result.indicators.quote[0];
+
+    if (!result || !Array.isArray(timestamps) || !timestamps.length || !quote) {
+      throw new Error('Yahoo Finance returned no candle data.');
+    }
+
+    const candles = [];
+    for (let index = 0; index < timestamps.length; index += 1) {
+      const open = quote.open && quote.open[index];
+      const high = quote.high && quote.high[index];
+      const low = quote.low && quote.low[index];
+      const close = quote.close && quote.close[index];
+      const volume = quote.volume && quote.volume[index];
+
+      if ([open, high, low, close].every(value => typeof value === 'number' && Number.isFinite(value))) {
+        candles.push({
+          time: timestamps[index],
+          open,
+          high,
+          low,
+          close,
+          volume: typeof volume === 'number' && Number.isFinite(volume) ? volume : null
+        });
+      }
+    }
+
+    if (!candles.length) {
+      throw new Error('Yahoo Finance candle data was empty after validation.');
+    }
+
+    return {
+      symbol,
+      status: 'ok',
+      resolution,
+      from,
+      to,
+      candles,
+      source: 'Yahoo Finance fallback',
+      fallbackUsed: true,
+      interval,
+      range
+    };
+  }
+
+  try {
+    try {
+      const finnhubPayload = await tryFinnhub();
+      return formatResponse(finnhubPayload);
+    } catch (finnhubError) {
+      const yahooPayload = await tryYahoo();
+      yahooPayload.fallbackReason = finnhubError.message;
+      return formatResponse(yahooPayload);
+    }
+  } catch (error) {
     return {
       statusCode: 200,
       headers,
-      body: JSON.stringify({ symbol, status: 'ok', resolution, from, to, candles, source: 'Finnhub' })
+      body: JSON.stringify({
+        symbol,
+        status: 'no_data',
+        candles: [],
+        source: 'Finnhub + Yahoo fallback',
+        message: error.message || 'No candle data returned from either provider. Try exact symbols like HDFCBANK.NS, NHPC.NS, RELIANCE.NS, TCS.NS, AAPL, or MSFT.'
+      })
     };
-  } catch (error) {
-    return { statusCode: 500, headers, body: JSON.stringify({ error: error.message || 'Unexpected Finnhub candle function error.' }) };
   }
 };
