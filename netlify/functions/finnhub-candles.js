@@ -38,60 +38,13 @@ exports.handler = async function(event) {
   };
 
   const isFxSymbol = Object.prototype.hasOwnProperty.call(fxYahooSymbols, symbol);
-  const yahooSymbol = fxYahooSymbols[symbol] || symbol;
+  const providerSymbol = fxYahooSymbols[symbol] || symbol;
 
   function formatResponse(payload) {
     return { statusCode: 200, headers, body: JSON.stringify(payload) };
   }
 
-  async function tryFinnhub() {
-    if (isFxSymbol) {
-      throw new Error('FX pairs are routed through the Yahoo Finance currency fallback.');
-    }
-
-    const apiKey = process.env.FINNHUB_API_KEY;
-    if (!apiKey) {
-      throw new Error('FINNHUB_API_KEY is not configured in Netlify environment variables.');
-    }
-
-    const url = `https://finnhub.io/api/v1/stock/candle?symbol=${encodeURIComponent(symbol)}&resolution=${encodeURIComponent(resolution)}&from=${from}&to=${to}&token=${apiKey}`;
-    const response = await fetch(url);
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error('Finnhub candle request failed.');
-    }
-
-    if (data.s !== 'ok' || !Array.isArray(data.t) || data.t.length === 0) {
-      throw new Error('Finnhub returned no candle data for this symbol/resolution.');
-    }
-
-    const candles = data.t.map((time, index) => ({
-      time,
-      open: data.o[index],
-      high: data.h[index],
-      low: data.l[index],
-      close: data.c[index],
-      volume: data.v ? data.v[index] : null
-    })).filter(candle => [candle.open, candle.high, candle.low, candle.close].every(value => typeof value === 'number' && Number.isFinite(value)));
-
-    if (!candles.length) {
-      throw new Error('Finnhub candle data was empty after validation.');
-    }
-
-    return {
-      symbol,
-      providerSymbol: symbol,
-      status: 'ok',
-      resolution,
-      from,
-      to,
-      candles,
-      source: 'Finnhub'
-    };
-  }
-
-  async function tryYahoo() {
+  async function tryUnifiedChart() {
     const intervalMap = {
       '1': '1m',
       '5': '5m',
@@ -107,14 +60,14 @@ exports.handler = async function(event) {
     if (['1m', '5m', '15m', '30m', '60m'].includes(interval)) range = '1mo';
     if (interval === '1wk') range = '5y';
 
-    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahooSymbol)}?interval=${encodeURIComponent(interval)}&range=${encodeURIComponent(range)}`;
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(providerSymbol)}?interval=${encodeURIComponent(interval)}&range=${encodeURIComponent(range)}&includePrePost=false`;
     const response = await fetch(url, {
       headers: { 'User-Agent': 'Mozilla/5.0 ScaleWiseDirect/1.0' }
     });
     const data = await response.json();
 
     if (!response.ok || !data.chart || data.chart.error) {
-      throw new Error(data.chart && data.chart.error ? data.chart.error.description : 'Yahoo candle request failed.');
+      throw new Error(data.chart && data.chart.error ? data.chart.error.description : 'Unified candle request failed.');
     }
 
     const result = data.chart.result && data.chart.result[0];
@@ -122,7 +75,7 @@ exports.handler = async function(event) {
     const quote = result && result.indicators && result.indicators.quote && result.indicators.quote[0];
 
     if (!result || !Array.isArray(timestamps) || !timestamps.length || !quote) {
-      throw new Error('Yahoo Finance returned no candle data.');
+      throw new Error('No candle data returned.');
     }
 
     const candles = [];
@@ -146,32 +99,78 @@ exports.handler = async function(event) {
     }
 
     if (!candles.length) {
-      throw new Error('Yahoo Finance candle data was empty after validation.');
+      throw new Error('Candle data was empty after validation.');
     }
 
     return {
       symbol,
-      providerSymbol: yahooSymbol,
+      providerSymbol,
       status: 'ok',
       resolution,
       from,
       to,
       candles,
-      source: isFxSymbol ? 'Yahoo Finance FX' : 'Yahoo Finance fallback',
-      fallbackUsed: true,
+      source: 'Consolidated market chart',
       interval,
       range
     };
   }
 
+  async function tryFallbackChart() {
+    if (isFxSymbol) {
+      throw new Error('Currency pairs use the consolidated chart provider.');
+    }
+
+    const apiKey = process.env.FINNHUB_API_KEY;
+    if (!apiKey) {
+      throw new Error('No fallback chart key configured.');
+    }
+
+    const url = `https://finnhub.io/api/v1/stock/candle?symbol=${encodeURIComponent(symbol)}&resolution=${encodeURIComponent(resolution)}&from=${from}&to=${to}&token=${apiKey}`;
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error('Fallback candle request failed.');
+    }
+
+    if (data.s !== 'ok' || !Array.isArray(data.t) || data.t.length === 0) {
+      throw new Error('Fallback candle provider returned no data.');
+    }
+
+    const candles = data.t.map((time, index) => ({
+      time,
+      open: data.o[index],
+      high: data.h[index],
+      low: data.l[index],
+      close: data.c[index],
+      volume: data.v ? data.v[index] : null
+    })).filter(candle => [candle.open, candle.high, candle.low, candle.close].every(value => typeof value === 'number' && Number.isFinite(value)));
+
+    if (!candles.length) {
+      throw new Error('Fallback candle data was empty after validation.');
+    }
+
+    return {
+      symbol,
+      providerSymbol: symbol,
+      status: 'ok',
+      resolution,
+      from,
+      to,
+      candles,
+      source: 'Fallback market chart',
+      fallbackUsed: true
+    };
+  }
+
   try {
     try {
-      const finnhubPayload = await tryFinnhub();
-      return formatResponse(finnhubPayload);
-    } catch (finnhubError) {
-      const yahooPayload = await tryYahoo();
-      yahooPayload.fallbackReason = finnhubError.message;
-      return formatResponse(yahooPayload);
+      return formatResponse(await tryUnifiedChart());
+    } catch (primaryError) {
+      const fallbackPayload = await tryFallbackChart();
+      fallbackPayload.fallbackReason = primaryError.message;
+      return formatResponse(fallbackPayload);
     }
   } catch (error) {
     return {
@@ -179,11 +178,11 @@ exports.handler = async function(event) {
       headers,
       body: JSON.stringify({
         symbol,
-        providerSymbol: yahooSymbol,
+        providerSymbol,
         status: 'no_data',
         candles: [],
-        source: isFxSymbol ? 'Yahoo Finance FX' : 'Finnhub + Yahoo fallback',
-        message: error.message || 'No candle data returned from either provider. Try exact symbols like USDINR, EURUSD, GBPUSD, USDJPY, HDFCBANK.NS, NHPC.NS, RELIANCE.NS, TCS.NS, AAPL, or MSFT.'
+        source: 'Market chart feed',
+        message: error.message || 'No candle data returned. Try exact symbols like USDINR, EURUSD, GBPUSD, USDJPY, HDFCBANK.NS, NHPC.NS, RELIANCE.NS, TCS.NS, AAPL, or MSFT.'
       })
     };
   }
