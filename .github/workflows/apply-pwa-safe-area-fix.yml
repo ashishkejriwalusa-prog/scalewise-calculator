@@ -11,6 +11,7 @@ permissions:
 jobs:
   patch:
     runs-on: ubuntu-latest
+    if: ${{ github.actor != 'github-actions[bot]' }}
     steps:
       - uses: actions/checkout@v4
       - name: Patch iPhone PWA header alignment
@@ -19,15 +20,43 @@ jobs:
           from pathlib import Path
           p = Path('index.html')
           s = p.read_text()
-          marker = '/* iPhone PWA safe-area header alignment fix */'
+          start = '/* iPhone PWA safe-area header alignment fix */'
+          end = '/* End iPhone PWA safe-area header alignment fix */'
           css = r'''
     /* iPhone PWA safe-area header alignment fix */
     @supports (padding-top: env(safe-area-inset-top)){
-      .nav{top:0;padding-top:env(safe-area-inset-top)}
-      .navin{height:76px;min-height:76px;align-items:center}
-      .brand{min-height:48px;align-items:center;padding:4px 0;position:relative;z-index:120}
-      .mark{flex:0 0 auto}
-      .menuBtn{min-width:52px;min-height:52px;width:52px;height:52px;align-items:center;justify-content:center;position:relative;z-index:130;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+      .nav{
+        top:0;
+        padding-top:env(safe-area-inset-top);
+      }
+      .navin{
+        height:76px;
+        min-height:76px;
+        align-items:center;
+      }
+      .brand{
+        min-height:48px;
+        align-items:center;
+        padding:4px 0;
+        position:relative;
+        z-index:120;
+        min-width:0;
+      }
+      .mark{
+        flex:0 0 auto;
+      }
+      .menuBtn{
+        min-width:52px;
+        min-height:52px;
+        width:52px;
+        height:52px;
+        align-items:center;
+        justify-content:center;
+        position:relative;
+        z-index:130;
+        touch-action:manipulation;
+        -webkit-tap-highlight-color:transparent;
+      }
       .links{top:calc(76px + env(safe-area-inset-top))}
       .backdrop{inset:calc(76px + env(safe-area-inset-top)) 0 0}
     }
@@ -38,20 +67,39 @@ jobs:
     }
     @media(max-width:620px){
       @supports (padding-top: env(safe-area-inset-top)){
-        .navin{height:70px;min-height:70px}
-        .brand{min-height:50px;max-width:calc(100% - 66px);overflow:hidden}
-        .brand strong{font-size:18px;line-height:1;white-space:nowrap}
+        .container{width:min(100% - 48px,1180px)}
+        .navin{height:72px;min-height:72px;gap:10px}
+        .brand{min-height:52px;max-width:calc(100% - 72px);overflow:visible;gap:8px;flex-shrink:1}
+        .brand strong{font-size:18px;line-height:1;white-space:nowrap;letter-spacing:.06em}
         .mark{width:40px;height:40px}
-        .menuBtn{min-width:54px;min-height:54px;width:54px;height:54px;margin-right:-4px;font-size:26px}
-        .links{top:calc(70px + env(safe-area-inset-top))}
-        .backdrop{top:calc(70px + env(safe-area-inset-top))}
-        .hero{padding-top:calc(112px + env(safe-area-inset-top))}
+        .mark svg{width:40px;height:40px;display:block}
+        .menuBtn{min-width:54px;min-height:54px;width:54px;height:54px;margin-right:-2px;font-size:26px;line-height:1;border-radius:15px;display:grid;place-items:center}
+        .links{top:calc(72px + env(safe-area-inset-top))}
+        .backdrop{top:calc(72px + env(safe-area-inset-top))}
+        .hero{padding-top:calc(126px + env(safe-area-inset-top))}
       }
     }
+    @media(max-width:390px){
+      @supports (padding-top: env(safe-area-inset-top)){
+        .container{width:min(100% - 40px,1180px)}
+        .brand strong{font-size:16px;letter-spacing:.05em}
+        .mark,.mark svg{width:38px;height:38px}
+        .menuBtn{min-width:52px;width:52px;height:52px}
+      }
+    }
+    /* End iPhone PWA safe-area header alignment fix */
 '''
-          if marker not in s:
+          if start in s and end in s:
+              before, rest = s.split(start, 1)
+              _, after = rest.split(end, 1)
+              s = before + css + after
+          elif start in s:
+              before, rest = s.split(start, 1)
+              after = rest.split("\n  </style>", 1)[1]
+              s = before + css + "\n  </style>" + after
+          else:
               s = s.replace('  </style>', css + '\n  </style>')
-              p.write_text(s)
+          p.write_text(s)
           PY
       - name: Commit fix if changed
         run: |
@@ -61,6 +109,6 @@ jobs:
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add index.html
-            git commit -m "Fix iPhone PWA header safe area alignment"
+            git commit -m "Fix iPhone PWA header and menu alignment"
             git push
           fi
