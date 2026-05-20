@@ -1,0 +1,19 @@
+{
+  "name": "ScaleWise",
+  "short_name": "ScaleWise",
+  "description": "ScaleWise offshore accounting, finance support, calculators, and client engagement portal.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#061A33",
+  "theme_color": "#061A33",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
