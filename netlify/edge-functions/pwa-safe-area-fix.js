@@ -80,7 +80,7 @@ export default async function handler(request, context) {
   }
   function safeParse(v){try{return JSON.parse(v||'[]')}catch(e){return[]}}
   function esc(v){return String(v||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
-  function getCookie(name){var m=document.cookie.match(new RegExp('(?:^|; )'+name.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'=([^;]*)'));return m?decodeURIComponent(m[1]):''}
+  function getCookie(name){var cookies='; '+document.cookie;var parts=cookies.split('; '+name+'=');return parts.length===2?decodeURIComponent(parts.pop().split(';')[0]):null;}
   function setCookie(name,value){document.cookie=name+'='+encodeURIComponent(value)+'; Max-Age=31536000; Path=/; SameSite=Lax'}
   function trimForCookie(posts){return (posts||[]).slice(0,12).map(function(p){return {type:p.type||'Article',poster:p.poster||'',title:p.title||'',summary:p.summary||'',date:p.date||'',fileName:p.fileName||'',fileData:''}})}
   function syncInsightsLibrary(){
