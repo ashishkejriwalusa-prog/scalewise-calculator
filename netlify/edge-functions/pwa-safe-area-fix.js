@@ -23,6 +23,9 @@ export default async (request, context) => {
 
   const safeAreaCss = `
   <style id="pwa-permanent-iphone-safe-area-fix">
+    .engagementFrame{height:1320px !important}
+    @media(max-width:960px){.engagementFrame{height:1500px !important}}
+    @media(max-width:620px){.engagementFrame{height:1760px !important}}
     .swInsightsSection{background:linear-gradient(180deg,#f6f8fb 0%,#fff 100%)}
     .swInsightsShell{display:grid;grid-template-columns:.9fr 1.1fr;gap:24px;align-items:start}
     .swInsightsForm,.swInsightsFeed{background:#fff;border:1px solid var(--line);border-radius:28px;padding:28px;box-shadow:var(--shadow)}
