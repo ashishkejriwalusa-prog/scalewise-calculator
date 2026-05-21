@@ -8,6 +8,10 @@ export default async (request, context) => {
 
   let html = await response.text();
 
+  html = html
+    .replace('Finance Operations · Accounting · Reporting', 'Finance Operations · Accounting · Reporting · CFO Advisory')
+    .replace('Founder, digital asset investment and advisory firm', 'Founder, Web3 company');
+
   const safeAreaCss = `
   <style id="pwa-permanent-iphone-safe-area-fix">
     @media (display-mode: standalone) and (max-width:620px),
