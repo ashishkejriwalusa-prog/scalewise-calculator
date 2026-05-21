@@ -110,6 +110,40 @@ export default async (request, context) => {
       .hero{
         padding-top:calc(140px + env(safe-area-inset-top)) !important;
       }
+
+      .launcher{
+        position:fixed !important;
+        left:14px !important;
+        right:14px !important;
+        bottom:calc(18px + env(safe-area-inset-bottom)) !important;
+        min-height:58px !important;
+        padding:14px 18px !important;
+        display:flex !important;
+        align-items:center !important;
+        justify-content:center !important;
+        transform:translate3d(0,0,0) !important;
+        -webkit-transform:translate3d(0,0,0) !important;
+        touch-action:manipulation;
+        pointer-events:auto !important;
+        z-index:9999 !important;
+      }
+
+      .chat{
+        position:fixed !important;
+        left:14px !important;
+        right:14px !important;
+        bottom:calc(92px + env(safe-area-inset-bottom)) !important;
+        width:auto !important;
+        height:calc(100dvh - 128px - env(safe-area-inset-top) - env(safe-area-inset-bottom)) !important;
+        max-height:620px !important;
+        transform:translate3d(0,0,0) !important;
+        -webkit-transform:translate3d(0,0,0) !important;
+        z-index:9998 !important;
+      }
+
+      .chatForm{
+        padding-bottom:calc(14px + env(safe-area-inset-bottom)) !important;
+      }
     }
   </style>
   `;
@@ -130,7 +164,6 @@ export default async (request, context) => {
         var launcher = document.getElementById('launcher');
         var chat = document.getElementById('chat');
         if(chat && !chat.classList.contains('open') && launcher){ launcher.click(); }
-        if(chat){ setTimeout(function(){ chat.scrollIntoView({behavior:'smooth', block:'nearest'}); }, 50); }
       }
       document.addEventListener('click', openScaleWiseAi, true);
 
