@@ -15,6 +15,12 @@
   status = 200
   force = true
 
+[[redirects]]
+  from = "/api/admin-insights"
+  to = "/.netlify/functions/admin-insights"
+  status = 200
+  force = true
+
 [[edge_functions]]
   path = "/*"
   function = "pwa-safe-area-fix"
