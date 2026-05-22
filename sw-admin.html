@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>SW Admin | ScaleWise</title>
+  <meta name="robots" content="noindex,nofollow">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+  <style>
+    :root{--navy:#061a33;--navy2:#0a2946;--gold:#e8bd62;--gold2:#ffda84;--ink:#142033;--muted:#667085;--line:#e6ebf2;--bg:#f6f8fb;--white:#fff;--shadow:0 24px 70px rgba(6,26,51,.14)}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:Inter,Arial,sans-serif;background:var(--bg);color:var(--ink);overflow-x:hidden}.container{width:min(980px,calc(100% - 40px));margin:auto}a{color:inherit}.nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(6,26,51,.96);backdrop-filter:blur(18px);border-bottom:1px solid rgba(255,255,255,.1)}.navin{height:76px;display:flex;align-items:center;justify-content:space-between;gap:18px}.brand{display:flex;align-items:center;gap:12px;color:#fff;text-decoration:none}.mark{width:42px;height:42px;border-radius:12px;border:1px solid rgba(255,255,255,.18);display:grid;place-items:center;background:rgba(255,255,255,.06)}.brand strong{font-family:'Playfair Display',serif;font-size:22px;letter-spacing:.09em;text-transform:uppercase}.nav a.back{color:rgba(255,255,255,.84);font-weight:800;text-decoration:none;font-size:14px}.hero{padding:142px 0 58px;background:linear-gradient(135deg,#020b19,#08243f 55%,#0a2946);color:#fff}.eyebrow{display:inline-flex;gap:10px;align-items:center;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.1);border-radius:999px;padding:10px 14px;color:#fff6dd;font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:.09em}.dot{width:8px;height:8px;background:var(--gold);border-radius:50%;box-shadow:0 0 0 7px rgba(232,189,98,.14)}h1{font-size:clamp(38px,5vw,62px);line-height:1;letter-spacing:-.055em;margin:22px 0 14px;max-width:780px}.hero p{font-size:18px;line-height:1.65;color:rgba(255,255,255,.82);max-width:720px}section{padding:58px 0}.panel{background:#fff;border:1px solid var(--line);border-radius:26px;padding:26px;box-shadow:0 18px 50px rgba(16,32,51,.06)}.form{display:grid;gap:15px}.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}label{display:block;font-size:13px;font-weight:900;color:#344054;margin-bottom:8px}input,select,textarea{width:100%;border:1px solid #d8dee8;background:#fbfcfe;border-radius:15px;padding:14px 15px;font:inherit;font-weight:700;color:#101828}textarea{min-height:170px;resize:vertical;line-height:1.6}.btn{display:inline-flex;align-items:center;justify-content:center;border:0;border-radius:999px;padding:14px 20px;font:inherit;font-weight:900;text-decoration:none;cursor:pointer}.gold{background:linear-gradient(135deg,var(--gold2),var(--gold));color:#071b34}.hint{font-size:12px;color:#667085;line-height:1.55}.notice{margin-top:14px;border:1px dashed #e3c36c;background:#fff8e8;color:#73510b;border-radius:18px;padding:14px;line-height:1.55;font-size:13px}.status{margin-top:16px;border-radius:16px;padding:14px;display:none}.status.ok{display:block;background:#ecfdf3;color:#027a48;border:1px solid #abefc6}.status.err{display:block;background:#fff1f3;color:#b42318;border:1px solid #fecdd3}@media(max-width:620px){.brand strong{font-size:18px}.two{grid-template-columns:1fr}.panel{padding:20px;border-radius:22px}.hero{padding-top:122px}}
+  </style>
+</head>
+<body>
+  <nav class="nav"><div class="container navin"><a class="brand" href="index.html#home"><span class="mark"><svg viewBox="0 0 48 48" width="42" height="42"><rect x="3" y="3" width="42" height="42" rx="10" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.18)"/><rect x="10" y="24" width="5" height="12" rx="2" fill="#e8bd62"/><rect x="18" y="18" width="5" height="18" rx="2" fill="#e8bd62"/><rect x="26" y="12" width="5" height="24" rx="2" fill="#e8bd62"/><rect x="34" y="7" width="5" height="29" rx="2" fill="#fff"/></svg></span><strong>ScaleWise</strong></a><a class="back" href="sw-insights.html">View SW Insights</a></div></nav>
+  <main>
+    <section class="hero"><div class="container"><span class="eyebrow"><span class="dot"></span> Admin Only · SW Insights</span><h1>Publish approved ScaleWise insights.</h1><p>This private page is for publishing articles and case studies to the central SW Insights feed. Public users can view published content only.</p></div></section>
+    <section><div class="container"><div class="panel"><form class="form" id="adminForm"><div><label>Admin password</label><input id="adminPassword" type="password" autocomplete="current-password" placeholder="Enter admin password" required><div class="hint">Set this in Netlify as <b>SW_ADMIN_PASSWORD</b>.</div></div><div class="two"><div><label>Post type</label><select id="postType" required><option>Article</option><option>Case Study</option></select></div><div><label>Poster name</label><input id="poster" type="text" value="ScaleWise" required></div></div><div><label>Title</label><input id="title" type="text" placeholder="Enter article or case study title" required></div><div><label>Summary / body</label><textarea id="summary" placeholder="Write the insight, client story, result, or article summary" required></textarea></div><div class="two"><div><label>Attachment name</label><input id="fileName" type="text" placeholder="Optional file name"></div><div><label>Attachment public URL</label><input id="fileData" type="url" placeholder="Optional public file link"></div></div><button class="btn gold" type="submit">Publish to SW Insights</button></form><div class="notice">This page updates the central JSON feed through a secure Netlify Function. Public users do not need this page to view published articles.</div><div class="status" id="status"></div></div></div></section>
+  </main>
+  <script>
+    const form=document.getElementById('adminForm');
+    const statusBox=document.getElementById('status');
+    function status(type,msg){statusBox.className='status '+type;statusBox.textContent=msg;}
+    form.addEventListener('submit',async function(e){
+      e.preventDefault();
+      status('ok','Publishing...');
+      const payload={
+        password:document.getElementById('adminPassword').value,
+        post:{
+          type:document.getElementById('postType').value,
+          poster:document.getElementById('poster').value,
+          title:document.getElementById('title').value,
+          summary:document.getElementById('summary').value,
+          date:new Date().toISOString().slice(0,10),
+          fileName:document.getElementById('fileName').value,
+          fileData:document.getElementById('fileData').value
+        }
+      };
+      try{
+        const res=await fetch('/api/admin-insights',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+        const data=await res.json();
+        if(!res.ok||!data.ok) throw new Error(data.error||'Publishing failed.');
+        status('ok','Published successfully. Open SW Insights to view the article.');
+        form.reset();document.getElementById('poster').value='ScaleWise';
+      }catch(err){status('err',err.message||'Publishing failed.');}
+    });
+  </script>
+</body>
+</html>
