@@ -23,25 +23,34 @@ function normalizePosts(input) {
     }));
 }
 
+function getFallbackUrl(event) {
+  const host = event.headers.host || event.headers.Host;
+  const proto = event.headers['x-forwarded-proto'] || 'https';
+  if (!host) return '';
+  return proto + '://' + host + '/sw-insights-data.json';
+}
+
 exports.handler = async function handler(event) {
   if (event.httpMethod === 'OPTIONS') return json(200, { ok: true });
   if (event.httpMethod !== 'GET') return json(405, { error: 'Method not allowed' });
 
   try {
-    if (!process.env.SW_INSIGHTS_JSON_URL) {
+    const dataUrl = process.env.SW_INSIGHTS_JSON_URL || getFallbackUrl(event);
+
+    if (!dataUrl) {
       return json(200, {
         source: 'not_configured',
         posts: [],
-        message: 'Cloud source is ready. Add SW_INSIGHTS_JSON_URL in Netlify environment variables.'
+        message: 'SW Insights cloud feed is ready but no cloud URL is available.'
       });
     }
 
-    const response = await fetch(process.env.SW_INSIGHTS_JSON_URL, { cache: 'no-store' });
+    const response = await fetch(dataUrl, { cache: 'no-store' });
     if (!response.ok) throw new Error('Cloud JSON URL failed with status ' + response.status);
     const raw = await response.json();
 
     return json(200, {
-      source: 'cloud_url',
+      source: process.env.SW_INSIGHTS_JSON_URL ? 'external_cloud_url' : 'site_cloud_feed',
       posts: normalizePosts(raw)
     });
   } catch (error) {
