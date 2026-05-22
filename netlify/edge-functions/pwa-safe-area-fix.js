@@ -78,6 +78,34 @@ export default async function handler(request, context) {
       }
     },80);
   }
+  function esc(v){return String(v||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+  function renderCloudPosts(posts){
+    var feed=document.getElementById('feed');
+    if(!feed || !Array.isArray(posts) || !posts.length) return;
+    window.swCloudPosts=posts;
+    function draw(filter){
+      var list=posts.filter(function(p){return filter==='all'||p.type===filter;});
+      if(!list.length){feed.innerHTML='<div class="empty">No posts found for this category.</div>';return;}
+      feed.innerHTML=list.map(function(p){
+        var link=p.fileData?'<a class="attach" href="'+esc(p.fileData)+'" target="_blank" rel="noopener">Open attachment: '+esc(p.fileName||'Attachment')+'</a>':'';
+        return '<article class="post"><div class="postTop"><span class="chip">'+esc(p.type||'Article')+'</span><span class="chip">'+esc(p.date||'')+'</span></div><h3>'+esc(p.title)+'</h3><p>'+esc(p.summary)+'</p><div class="meta"><span class="chip">Poster: '+esc(p.poster||'ScaleWise')+'</span>'+link+'</div></article>';
+      }).join('');
+    }
+    draw('all');
+    document.querySelectorAll('.tab').forEach(function(btn){
+      btn.onclick=function(){
+        document.querySelectorAll('.tab').forEach(function(b){b.classList.remove('active');});
+        btn.classList.add('active');
+        draw(btn.getAttribute('data-filter')||'all');
+      };
+    });
+  }
+  function loadCloudInsights(){
+    if(!/sw-insights\.html|\/sw-insights\/?$/.test(location.pathname)) return;
+    fetch('/api/insights',{cache:'no-store'}).then(function(r){return r.json();}).then(function(data){
+      if(data && data.posts && data.posts.length) renderCloudPosts(data.posts);
+    }).catch(function(){});
+  }
   document.addEventListener('click',function(e){
     var closeBtn=e.target.closest('.chat .close,#chat .close,[data-close-chat],.chatClose,.chat-close');
     if(closeBtn){setTimeout(hideChat,20);return;}
@@ -101,7 +129,7 @@ export default async function handler(request, context) {
       if(panel){panel.addEventListener('mouseenter',open);panel.addEventListener('mouseleave',close);}
     });
   }
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',initDropdown); else initDropdown();
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',function(){initDropdown();loadCloudInsights();}); else {initDropdown();loadCloudInsights();}
 })();
 </script>`;
 
