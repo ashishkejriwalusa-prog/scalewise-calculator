@@ -78,37 +78,15 @@ export default async function handler(request, context) {
       }
     },80);
   }
-  function safeParse(v){try{return JSON.parse(v||'[]')}catch(e){return[]}}
-  function esc(v){return String(v||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
-  function getCookie(name){var m=document.cookie.match(new RegExp('(?:^|; )'+name.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'=([^;]*)'));return m?decodeURIComponent(m[1]):''}
-  function setCookie(name,value){document.cookie=name+'='+encodeURIComponent(value)+'; Max-Age=31536000; Path=/; SameSite=Lax'}
-  function trimForCookie(posts){return (posts||[]).slice(0,12).map(function(p){return {type:p.type||'Article',poster:p.poster||'',title:p.title||'',summary:p.summary||'',date:p.date||'',fileName:p.fileName||'',fileData:''}})}
-  function syncInsightsLibrary(){
-    if(!/sw-insights\.html|\/sw-insights\/?$/.test(location.pathname)) return;
-    var key='swInsightsLibrary', cookieName='swInsightsLibrarySync', feed=document.getElementById('feed');
-    var local=safeParse(localStorage.getItem(key));
-    var cookie=safeParse(getCookie(cookieName));
-    if(local.length){setCookie(cookieName,JSON.stringify(trimForCookie(local)));return;}
-    if(cookie.length){
-      localStorage.setItem(key,JSON.stringify(cookie));
-      if(feed){
-        feed.innerHTML=cookie.map(function(p){return '<article class="post"><div class="postTop"><span class="chip">'+esc(p.type)+'</span><span class="chip">'+esc(p.date)+'</span></div><h3>'+esc(p.title)+'</h3><p>'+esc(p.summary)+'</p><div class="meta"><span class="chip">Poster: '+esc(p.poster)+'</span></div></article>'}).join('');
-      }
-    }
-  }
   document.addEventListener('click',function(e){
     var closeBtn=e.target.closest('.chat .close,#chat .close,[data-close-chat],.chatClose,.chat-close');
-    if(closeBtn){
-      setTimeout(hideChat,20);
-      return;
-    }
+    if(closeBtn){setTimeout(hideChat,20);return;}
     var t=e.target.closest('[data-open-scalewise-ai],a[href="#assistant"]');
     if(!t) return;
     e.preventDefault();
     e.stopPropagation();
     openChat();
   },true);
-  document.addEventListener('submit',function(e){if(e.target&&e.target.id==='insightForm'){setTimeout(syncInsightsLibrary,450)}},true);
   document.addEventListener('keydown',function(e){ if(e.key==='Escape') hideChat(); });
   function initDropdown(){
     document.querySelectorAll('.sw-nav-drop,.navDrop').forEach(function(drop){
@@ -123,7 +101,7 @@ export default async function handler(request, context) {
       if(panel){panel.addEventListener('mouseenter',open);panel.addEventListener('mouseleave',close);}
     });
   }
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',function(){initDropdown();syncInsightsLibrary();}); else {initDropdown();syncInsightsLibrary();}
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',initDropdown); else initDropdown();
 })();
 </script>`;
 
