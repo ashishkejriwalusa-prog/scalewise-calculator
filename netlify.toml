@@ -1,7 +1,7 @@
 [build]
   publish = "."
   functions = "netlify/functions"
-  command = "python3 patch_seo.py && python3 patch_direct_currency.py"
+  command = "echo 'Static ScaleWise site - no build step required'"
 
 [[redirects]]
   from = "/api/chat"
