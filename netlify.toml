@@ -1,7 +1,7 @@
 [build]
   publish = "."
   functions = "netlify/functions"
-  command = "node patch_home_nav.js && echo Static ScaleWise deploy"
+  command = "node patch_home_nav.js && node patch_direct_fx_live.js && echo Static ScaleWise deploy"
 
 [[redirects]]
   from = "/api/chat"
