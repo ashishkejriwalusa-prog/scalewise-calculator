@@ -21,9 +21,9 @@ const patch = `
   function parts(pair){pair=String(pair||'USDINR').replace('/','').toUpperCase();return [pair.slice(0,3)||'USD',pair.slice(3,6)||'INR']}
   function hash(s){var h=0;s=String(s||'');for(var i=0;i<s.length;i++)h=(Math.imul(31,h)+s.charCodeAt(i))|0;return Math.abs(h)}
   function setOptions(list,labels){var s=el('symbolSelect');if(!s)return;var cur=s.value;s.innerHTML=list.map(function(v,i){return '<option value="'+v+'">'+(labels?labels[i]:(LABELS[v]||v))+'</option>';}).join('');if(list.indexOf(cur)>=0)s.value=cur;else s.value=list[0];}
-  function normalizeQuery(q){return String(q||'').trim().toUpperCase().replace(/[.]/g,'.').replace(/\s+/g,' ')}
+  function normalizeQuery(q){return String(q||'').trim().toUpperCase().replace(/\s+/g,' ')}
   function resolveSearch(q){
-    var raw=String(q||'').trim(); var key=normalizeQuery(raw).replace(/\./g,'.'); var compact=key.replace(/[^A-Z0-9&]/g,' ' ).replace(/\s+/g,' ').trim();
+    var raw=String(q||'').trim(); var key=normalizeQuery(raw); var compact=key.replace(/[^A-Z0-9&]/g,' ' ).replace(/\s+/g,' ').trim();
     if(!raw)return null;
     var fx=raw.toUpperCase().replace('/',''); if(/^[A-Z]{6}$/.test(fx)&&base[fx.slice(0,3)]&&base[fx.slice(3,6)]) return {mode:'fx',symbol:fx};
     var direct=ALIAS[compact]||ALIAS[key]||ALIAS[raw.toUpperCase()];
