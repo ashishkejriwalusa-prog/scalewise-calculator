@@ -6,8 +6,13 @@ const patch = `
 <script id="sw-direct-dynamic-terminal-fix">
 (function(){
   var FX_PAIRS=['USDINR','INRUSD','EURUSD','GBPUSD','GBPAED','EURINR','AEDINR','USDCAD','AUDUSD','USDJPY','EURGBP','GBPINR','SGDINR','CADINR'];
-  var US=['NVDA','MSFT','AAPL','AMZN','GOOGL'];
-  var IN=['NHPC.NS','RELIANCE.NS','HDFCBANK.NS','TCS.NS','INFY.NS','LT.NS'];
+  var US=['NVDA','MSFT','AAPL','AMZN','GOOGL','KO','PEP','JPM','TSLA','META','NFLX','AMD','COST','WMT','DIS','NKE','BA','GE','XOM','CVX'];
+  var IN=['NHPC.NS','RELIANCE.NS','HDFCBANK.NS','TCS.NS','INFY.NS','LT.NS','ITC.NS','SBIN.NS','ICICIBANK.NS','TATAMOTORS.NS','ADANIENT.NS','MARUTI.NS','WIPRO.NS','HINDUNILVR.NS','BHARTIARTL.NS'];
+  var LABELS={NVDA:'NVIDIA',MSFT:'Microsoft',AAPL:'Apple',AMZN:'Amazon',GOOGL:'Alphabet',KO:'Coca-Cola',PEP:'PepsiCo',JPM:'JPMorgan Chase',TSLA:'Tesla',META:'Meta Platforms',NFLX:'Netflix',AMD:'AMD',COST:'Costco',WMT:'Walmart',DIS:'Disney',NKE:'Nike',BA:'Boeing',GE:'GE Aerospace',XOM:'Exxon Mobil',CVX:'Chevron','NHPC.NS':'NHPC','RELIANCE.NS':'Reliance','HDFCBANK.NS':'HDFC Bank','TCS.NS':'TCS','INFY.NS':'Infosys','LT.NS':'Larsen & Toubro','ITC.NS':'ITC','SBIN.NS':'State Bank of India','ICICIBANK.NS':'ICICI Bank','TATAMOTORS.NS':'Tata Motors','ADANIENT.NS':'Adani Enterprises','MARUTI.NS':'Maruti Suzuki','WIPRO.NS':'Wipro','HINDUNILVR.NS':'Hindustan Unilever','BHARTIARTL.NS':'Bharti Airtel'};
+  var ALIAS={
+    'COCA COLA':'KO','COCA-COLA':'KO','COKE':'KO','KO':'KO','PEPSI':'PEP','PEPSICO':'PEP','PEP':'PEP','MICROSOFT':'MSFT','MSFT':'MSFT','APPLE':'AAPL','AAPL':'AAPL','NVIDIA':'NVDA','NVDA':'NVDA','TESLA':'TSLA','TSLA':'TSLA','AMAZON':'AMZN','AMZN':'AMZN','GOOGLE':'GOOGL','ALPHABET':'GOOGL','GOOGL':'GOOGL','JPMORGAN':'JPM','JP MORGAN':'JPM','JPM':'JPM','META':'META','FACEBOOK':'META','NETFLIX':'NFLX','AMD':'AMD','COSTCO':'COST','WALMART':'WMT','DISNEY':'DIS','NIKE':'NKE','BOEING':'BA','GE':'GE','EXXON':'XOM','EXXON MOBIL':'XOM','CHEVRON':'CVX',
+    'NHPC':'NHPC.NS','NHPC LIMITED':'NHPC.NS','RELIANCE':'RELIANCE.NS','RELIANCE INDUSTRIES':'RELIANCE.NS','HDFC':'HDFCBANK.NS','HDFC BANK':'HDFCBANK.NS','TCS':'TCS.NS','TATA CONSULTANCY':'TCS.NS','TATA CONSULTANCY SERVICES':'TCS.NS','INFOSYS':'INFY.NS','INFY':'INFY.NS','LARSEN':'LT.NS','LARSEN TOUBRO':'LT.NS','L&T':'LT.NS','LT':'LT.NS','ITC':'ITC.NS','SBI':'SBIN.NS','STATE BANK OF INDIA':'SBIN.NS','ICICI':'ICICIBANK.NS','ICICI BANK':'ICICIBANK.NS','TATA MOTORS':'TATAMOTORS.NS','ADANI':'ADANIENT.NS','ADANI ENTERPRISES':'ADANIENT.NS','MARUTI':'MARUTI.NS','MARUTI SUZUKI':'MARUTI.NS','WIPRO':'WIPRO.NS','HUL':'HINDUNILVR.NS','HINDUSTAN UNILEVER':'HINDUNILVR.NS','BHARTI AIRTEL':'BHARTIARTL.NS','AIRTEL':'BHARTIARTL.NS'
+  };
   var base={USD:1,INR:83.2,EUR:.92,GBP:.79,JPY:157,CAD:1.36,AUD:1.5,AED:3.6725,SGD:1.35};
   var lastMode='', lastPair='', busy=false;
   function el(id){return document.getElementById(id)}
@@ -15,49 +20,27 @@ const patch = `
   function now(){return new Date().toLocaleTimeString()}
   function parts(pair){pair=String(pair||'USDINR').replace('/','').toUpperCase();return [pair.slice(0,3)||'USD',pair.slice(3,6)||'INR']}
   function hash(s){var h=0;s=String(s||'');for(var i=0;i<s.length;i++)h=(Math.imul(31,h)+s.charCodeAt(i))|0;return Math.abs(h)}
-  function setOptions(list,labels){var s=el('symbolSelect');if(!s)return;var cur=s.value;s.innerHTML=list.map(function(v,i){return '<option value="'+v+'">'+(labels?labels[i]:v)+'</option>';}).join('');if(list.indexOf(cur)>=0)s.value=cur;else s.value=list[0];}
-  async function fxRate(from,to){
-    try{var r=await fetch('https://open.er-api.com/v6/latest/'+from,{cache:'no-store'}).then(function(x){return x.json()});if(r&&r.rates&&Number(r.rates[to]))return {rate:Number(r.rates[to]),source:'Live FX feed'};}catch(e){}
-    return {rate:(base[to]||1)/(base[from]||1),source:'Reference FX fallback'};
+  function setOptions(list,labels){var s=el('symbolSelect');if(!s)return;var cur=s.value;s.innerHTML=list.map(function(v,i){return '<option value="'+v+'">'+(labels?labels[i]:(LABELS[v]||v))+'</option>';}).join('');if(list.indexOf(cur)>=0)s.value=cur;else s.value=list[0];}
+  function normalizeQuery(q){return String(q||'').trim().toUpperCase().replace(/[.]/g,'.').replace(/\s+/g,' ')}
+  function resolveSearch(q){
+    var raw=String(q||'').trim(); var key=normalizeQuery(raw).replace(/\./g,'.'); var compact=key.replace(/[^A-Z0-9&]/g,' ' ).replace(/\s+/g,' ').trim();
+    if(!raw)return null;
+    var fx=raw.toUpperCase().replace('/',''); if(/^[A-Z]{6}$/.test(fx)&&base[fx.slice(0,3)]&&base[fx.slice(3,6)]) return {mode:'fx',symbol:fx};
+    var direct=ALIAS[compact]||ALIAS[key]||ALIAS[raw.toUpperCase()];
+    if(direct) return {mode:direct.endsWith('.NS')?'india':'us',symbol:direct};
+    var all=US.concat(IN);
+    for(var i=0;i<all.length;i++){var sym=all[i],nm=(LABELS[sym]||sym).toUpperCase();if(nm===key||nm.indexOf(key)>=0||key.indexOf(nm)>=0)return {mode:sym.endsWith('.NS')?'india':'us',symbol:sym};}
+    var guess=raw.toUpperCase().replace(/\s+/g,'');
+    if(el('marketSelect')&&el('marketSelect').value==='india'&&!guess.endsWith('.NS')&&!guess.endsWith('.BO')) guess=guess+'.NS';
+    return {mode:guess.endsWith('.NS')||guess.endsWith('.BO')?'india':'us',symbol:guess};
   }
+  async function fxRate(from,to){try{var r=await fetch('https://open.er-api.com/v6/latest/'+from,{cache:'no-store'}).then(function(x){return x.json()});if(r&&r.rates&&Number(r.rates[to]))return {rate:Number(r.rates[to]),source:'Live FX feed'};}catch(e){} return {rate:(base[to]||1)/(base[from]||1),source:'Reference FX fallback'};}
   function candles(pair,rate){var out=[],t=Math.floor(Date.now()/1000),seed=hash(pair);for(var i=140;i>=0;i--){var w=Math.sin((i+seed%19)/7)*.0035+Math.cos((i+seed%29)/11)*.0025;var drift=(70-i)*.000025;var c=rate*(1+w+drift);var o=rate*(1+Math.sin((i+1+seed%19)/7)*.0035+Math.cos((i+1+seed%29)/11)*.0025);out.push({time:t-i*3600,open:o,high:Math.max(o,c)*1.0016,low:Math.min(o,c)*.9984,close:c});}return out;}
   function setCandleData(data){try{if(typeof candleSeries!=='undefined'&&candleSeries&&candleSeries.setData){candleSeries.setData(data);if(typeof chart!=='undefined'&&chart&&chart.timeScale)chart.timeScale().fitContent();}}catch(e){}}
-  async function drawFx(pair){
-    if(busy)return;busy=true;
-    pair=String(pair||'USDINR').replace('/','').toUpperCase();var p=parts(pair),from=p[0],to=p[1];
-    var live=await fxRate(from,to);var rate=live.rate;
-    if(el('chartTitle'))el('chartTitle').textContent=from+'/'+to;
-    if(el('chartSubTitle'))el('chartSubTitle').textContent=pair+' · Live Currency / FX';
-    if(el('chartStatus'))el('chartStatus').textContent='FX loaded · '+pair+' · '+now();
-    setCandleData(candles(pair,rate));
-    if(el('quoteName'))el('quoteName').textContent=from+'/'+to;
-    if(el('quoteMeta'))el('quoteMeta').textContent=pair+' · Global Currency / FX';
-    if(el('livePrice'))el('livePrice').textContent='1 '+from+' = '+fmt(rate)+' '+to;
-    if(el('quoteSignal')){el('quoteSignal').className='tag hold';el('quoteSignal').textContent='LIVE FX';}
-    if(el('quoteThesis'))el('quoteThesis').textContent='FX movement is driven by central-bank policy, inflation, yields, capital flows, trade balances, commodities, and geopolitical risk.';
-    if(el('quoteSource'))el('quoteSource').textContent='Source: '+live.source+' · refreshed '+now()+' · terminal refreshes every 5 seconds.';
-    if(el('currentSymbolBox'))el('currentSymbolBox').textContent=pair;
-    if(el('exchangeBox'))el('exchangeBox').textContent='Currency / FX';
-    if(el('chartHealthBox'))el('chartHealthBox').textContent='FX Live';
-    if(el('fromCurrency'))el('fromCurrency').value=from;if(el('toCurrency'))el('toCurrency').value=to;
-    if(el('fxPairBig'))el('fxPairBig').textContent='1 '+from+' → '+to;if(el('fxRateLine'))el('fxRateLine').textContent='1 '+from+' = '+fmt(rate)+' '+to;
-    if(el('forecastAsset'))el('forecastAsset').value=pair;if(el('forecastLivePrice'))el('forecastLivePrice').textContent=fmt(rate);if(el('forecastRange'))el('forecastRange').textContent=fmt(rate*.97)+' - '+fmt(rate*1.03);
-    if(el('momentumScore'))el('momentumScore').textContent='Live FX';if(el('riskScore'))el('riskScore').textContent='Medium';if(el('recommendationScore'))el('recommendationScore').textContent='Monitor';if(el('outlookScore'))el('outlookScore').textContent='Macro driven';
-    if(el('dayHighValue'))el('dayHighValue').textContent=fmt(rate*1.004);if(el('dayLowValue'))el('dayLowValue').textContent=fmt(rate*.996);if(el('weekHighValue'))el('weekHighValue').textContent=fmt(rate*1.035);if(el('weekLowValue'))el('weekLowValue').textContent=fmt(rate*.965);
-    if(el('forecastTable'))el('forecastTable').innerHTML='<tr><th>Scenario</th><th>Rate</th><th>Interpretation</th></tr><tr><td>Base</td><td>'+fmt(rate)+'</td><td>Current live/reference FX rate.</td></tr><tr><td>Upper band</td><td>'+fmt(rate*1.025)+'</td><td>Potential stronger '+from+' scenario.</td></tr><tr><td>Lower band</td><td>'+fmt(rate*.975)+'</td><td>Potential weaker '+from+' scenario.</td></tr>';
-    if(el('analysisTable'))el('analysisTable').innerHTML='<tr><th>Driver</th><th>Read</th></tr><tr><td>Central banks</td><td>Policy-rate expectations remain the key driver.</td></tr><tr><td>Inflation / yields</td><td>Yield spread shifts can move '+pair+'.</td></tr><tr><td>Geopolitics</td><td>Risk-off flows may move currencies quickly.</td></tr>';
-    if(el('priceLevelsTable'))el('priceLevelsTable').innerHTML='<tr><th>Level</th><th>Value</th><th>Use</th></tr><tr><td>Live</td><td>'+fmt(rate)+'</td><td>Current reference</td></tr><tr><td>Day proxy</td><td>'+fmt(rate*.996)+' - '+fmt(rate*1.004)+'</td><td>Short-term band</td></tr><tr><td>52-week proxy</td><td>'+fmt(rate*.965)+' - '+fmt(rate*1.035)+'</td><td>Longer-term band</td></tr>';
-    busy=false;
-  }
-  function forceMode(){
-    var m=el('marketSelect');if(!m)return;
-    if(m.value==='fx'){
-      if(lastMode!=='fx'){setOptions(FX_PAIRS,['USD/INR','INR/USD','EUR/USD','GBP/USD','GBP/AED','EUR/INR','AED/INR','USD/CAD','AUD/USD','USD/JPY','EUR/GBP','GBP/INR','SGD/INR','CAD/INR']);lastMode='fx';lastPair='';}
-      var pair=el('symbolSelect')?el('symbolSelect').value:'USDINR';
-      if(pair!==lastPair || (el('chartTitle') && !el('chartTitle').textContent.includes('/'))){lastPair=pair;drawFx(pair);}return;
-    }
-    if(m.value!==lastMode){lastMode=m.value;lastPair='';if(m.value==='us')setOptions(US);if(m.value==='india')setOptions(IN,['NHPC','Reliance','HDFC Bank','TCS','Infosys','L&T']);if(typeof window.setMarketPreset==='function'&&window.setMarketPreset!==forceMode)setTimeout(function(){try{window.setMarketPreset()}catch(e){}},0);}
-  }
+  async function drawFx(pair){if(busy)return;busy=true;pair=String(pair||'USDINR').replace('/','').toUpperCase();var p=parts(pair),from=p[0],to=p[1];var live=await fxRate(from,to);var rate=live.rate;if(el('chartTitle'))el('chartTitle').textContent=from+'/'+to;if(el('chartSubTitle'))el('chartSubTitle').textContent=pair+' · Live Currency / FX';if(el('chartStatus'))el('chartStatus').textContent='FX loaded · '+pair+' · '+now();setCandleData(candles(pair,rate));if(el('quoteName'))el('quoteName').textContent=from+'/'+to;if(el('quoteMeta'))el('quoteMeta').textContent=pair+' · Global Currency / FX';if(el('livePrice'))el('livePrice').textContent='1 '+from+' = '+fmt(rate)+' '+to;if(el('quoteSignal')){el('quoteSignal').className='tag hold';el('quoteSignal').textContent='LIVE FX';}if(el('quoteThesis'))el('quoteThesis').textContent='FX movement is driven by central-bank policy, inflation, yields, capital flows, trade balances, commodities, and geopolitical risk.';if(el('quoteSource'))el('quoteSource').textContent='Source: '+live.source+' · refreshed '+now()+' · terminal refreshes every 5 seconds.';if(el('currentSymbolBox'))el('currentSymbolBox').textContent=pair;if(el('exchangeBox'))el('exchangeBox').textContent='Currency / FX';if(el('chartHealthBox'))el('chartHealthBox').textContent='FX Live';if(el('fromCurrency'))el('fromCurrency').value=from;if(el('toCurrency'))el('toCurrency').value=to;if(el('fxPairBig'))el('fxPairBig').textContent='1 '+from+' → '+to;if(el('fxRateLine'))el('fxRateLine').textContent='1 '+from+' = '+fmt(rate)+' '+to;if(el('forecastAsset'))el('forecastAsset').value=pair;if(el('forecastLivePrice'))el('forecastLivePrice').textContent=fmt(rate);if(el('forecastRange'))el('forecastRange').textContent=fmt(rate*.97)+' - '+fmt(rate*1.03);if(el('momentumScore'))el('momentumScore').textContent='Live FX';if(el('riskScore'))el('riskScore').textContent='Medium';if(el('recommendationScore'))el('recommendationScore').textContent='Monitor';if(el('outlookScore'))el('outlookScore').textContent='Macro driven';if(el('dayHighValue'))el('dayHighValue').textContent=fmt(rate*1.004);if(el('dayLowValue'))el('dayLowValue').textContent=fmt(rate*.996);if(el('weekHighValue'))el('weekHighValue').textContent=fmt(rate*1.035);if(el('weekLowValue'))el('weekLowValue').textContent=fmt(rate*.965);busy=false;}
+  function forceMode(){var m=el('marketSelect');if(!m)return;if(m.value==='fx'){if(lastMode!=='fx'){setOptions(FX_PAIRS,['USD/INR','INR/USD','EUR/USD','GBP/USD','GBP/AED','EUR/INR','AED/INR','USD/CAD','AUD/USD','USD/JPY','EUR/GBP','GBP/INR','SGD/INR','CAD/INR']);lastMode='fx';lastPair='';}var pair=el('symbolSelect')?el('symbolSelect').value:'USDINR';if(pair!==lastPair || (el('chartTitle') && !el('chartTitle').textContent.includes('/'))){lastPair=pair;drawFx(pair);}return;} if(m.value!==lastMode){lastMode=m.value;lastPair='';if(m.value==='us')setOptions(US);if(m.value==='india')setOptions(IN);if(typeof window.setMarketPreset==='function'&&window.setMarketPreset!==forceMode)setTimeout(function(){try{window.setMarketPreset()}catch(e){}},0);}}
+  var originalSearch=window.searchStock;
+  window.searchStock=function(){var input=el('stockSearch'),resolved=resolveSearch(input?input.value:'');if(!resolved){if(typeof originalSearch==='function')return originalSearch();return;}if(el('marketSelect'))el('marketSelect').value=resolved.mode;if(resolved.mode==='fx'){setOptions(FX_PAIRS,['USD/INR','INR/USD','EUR/USD','GBP/USD','GBP/AED','EUR/INR','AED/INR','USD/CAD','AUD/USD','USD/JPY','EUR/GBP','GBP/INR','SGD/INR','CAD/INR']);if(el('symbolSelect'))el('symbolSelect').value=resolved.symbol;drawFx(resolved.symbol);return;}if(resolved.mode==='us')setOptions(US);if(resolved.mode==='india')setOptions(IN);if(el('symbolSelect')){if(!Array.from(el('symbolSelect').options).some(function(o){return o.value===resolved.symbol;}))el('symbolSelect').insertAdjacentHTML('beforeend','<option value="'+resolved.symbol+'">'+(LABELS[resolved.symbol]||resolved.symbol)+'</option>');el('symbolSelect').value=resolved.symbol;}if(input)input.value=LABELS[resolved.symbol]||resolved.symbol; if(typeof window.loadSelectedSymbol==='function')return window.loadSelectedSymbol(); if(typeof originalSearch==='function')return originalSearch();};
   document.addEventListener('change',function(e){if(e.target&&e.target.id==='marketSelect')setTimeout(forceMode,50);if(e.target&&e.target.id==='symbolSelect'&&el('marketSelect')&&el('marketSelect').value==='fx')drawFx(e.target.value);},true);
   document.addEventListener('DOMContentLoaded',function(){setInterval(forceMode,1000);setInterval(function(){if(el('marketSelect')&&el('marketSelect').value==='fx')drawFx(el('symbolSelect')?el('symbolSelect').value:'USDINR');},5000);forceMode();});
 })();
