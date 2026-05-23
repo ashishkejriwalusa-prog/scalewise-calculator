@@ -36,13 +36,13 @@ exports.handler = async function handler(event) {
 
   try {
     const adminPassword = process.env.SW_ADMIN_PASSWORD;
-    const githubToken = process.env.GITHUB_TOKEN;
+    const githubToken = process.env.SW_GITHUB_TOKEN;
     const repo = process.env.GITHUB_REPO || 'ashishkejriwalusa-prog/scalewise-calculator';
     const branch = process.env.GITHUB_BRANCH || 'main';
     const dataPath = process.env.GITHUB_DATA_PATH || 'sw-insights-data.json';
 
     if (!adminPassword) return json(500, { ok: false, error: 'SW_ADMIN_PASSWORD is not configured in Netlify.' });
-    if (!githubToken) return json(500, { ok: false, error: 'GITHUB_TOKEN is not configured in Netlify.' });
+    if (!githubToken) return json(500, { ok: false, error: 'SW_GITHUB_TOKEN is not configured in Netlify.' });
 
     const body = JSON.parse(event.body || '{}');
     if (body.password !== adminPassword) return json(401, { ok: false, error: 'Invalid admin password.' });
@@ -61,7 +61,7 @@ exports.handler = async function handler(event) {
     const getResponse = await fetch(apiUrl, { headers });
     if (!getResponse.ok) {
       const text = await getResponse.text();
-      return json(500, { ok: false, error: 'Unable to read insights feed: ' + text });
+      return json(500, { ok: false, error: 'Unable to read insights feed.' });
     }
 
     const currentFile = await getResponse.json();
@@ -78,13 +78,12 @@ exports.handler = async function handler(event) {
         message: 'Publish SW Insights article',
         content: encodeBase64(updatedJson),
         sha: currentFile.sha,
-        branch
+        branch: branch
       })
     });
 
     if (!putResponse.ok) {
-      const text = await putResponse.text();
-      return json(500, { ok: false, error: 'Unable to publish insight: ' + text });
+      return json(500, { ok: false, error: 'Unable to publish insight.' });
     }
 
     return json(200, { ok: true, post });
