@@ -1,7 +1,7 @@
 [build]
   publish = "."
   functions = "netlify/functions"
-  command = "echo 'Static ScaleWise site - no build step required'"
+  command = "echo Static ScaleWise deploy"
 
 [[redirects]]
   from = "/api/chat"
@@ -20,7 +20,3 @@
   to = "/.netlify/functions/admin-insights"
   status = 200
   force = true
-
-[[edge_functions]]
-  path = "/*"
-  function = "pwa-safe-area-fix"
