@@ -11,17 +11,36 @@
     (async function () {
       const repo = 'ashishkejriwalusa-prog/scalewise-calculator';
       const originalBlobSha = '4f7e6025c2a60d67f7972dced06be6ab3b39bbf0';
-      const promoImage = '7B949CBD-55E1-4E83-AA68-31D0D4583472.png';
 
       const heroStart = '<section class="hero"><div class="container heroGrid">';
       const promoBlock = [
         '<section class="hero">',
         '<style>',
-        '@keyframes scalewiseOfferFlash{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.74;transform:scale(1.018)}}',
-        '.scalewisePromoFlash{animation:scalewiseOfferFlash 1.45s ease-in-out infinite;position:relative;z-index:2;margin:0 auto 34px;max-width:980px}',
-        '.scalewisePromoFlash img{width:100%;height:auto;display:block;border-radius:16px;box-shadow:0 24px 70px rgba(0,0,0,.26)}',
+        '@keyframes scalewiseOfferFloat{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-7px) scale(1.025)}}',
+        '@keyframes scalewiseOfferGlow{0%,100%{box-shadow:0 28px 80px rgba(232,189,98,.34),0 0 0 0 rgba(232,189,98,.48)}50%{box-shadow:0 34px 98px rgba(232,189,98,.55),0 0 0 12px rgba(232,189,98,.08)}}',
+        '.hero{position:relative}',
+        '.scalewisePromoCard{position:absolute;top:108px;right:max(24px,calc((100vw - 1180px)/2));z-index:6;width:min(318px,calc(100vw - 36px));border-radius:24px;padding:18px;background:linear-gradient(145deg,rgba(6,26,51,.96),rgba(10,41,70,.94));border:1px solid rgba(255,218,132,.7);color:#fff;text-decoration:none;overflow:hidden;animation:scalewiseOfferFloat 3.8s ease-in-out infinite,scalewiseOfferGlow 2.4s ease-in-out infinite;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}',
+        '.scalewisePromoCard:before{content:"";position:absolute;inset:-45%;background:linear-gradient(120deg,transparent 35%,rgba(255,255,255,.34) 48%,transparent 62%);transform:rotate(18deg);animation:scalewiseShine 3.2s ease-in-out infinite}',
+        '@keyframes scalewiseShine{0%{translate:-55% 0}55%,100%{translate:55% 0}}',
+        '.scalewisePromoInner{position:relative;z-index:1}',
+        '.scalewisePromoLabel{display:inline-flex;align-items:center;gap:7px;margin-bottom:10px;padding:7px 10px;border-radius:999px;background:rgba(255,218,132,.16);border:1px solid rgba(255,218,132,.38);color:#ffefc2;font-size:11px;font-weight:1000;letter-spacing:.1em;text-transform:uppercase}',
+        '.scalewisePromoGift{font-size:15px}',
+        '.scalewisePromoHours{display:block;margin:0;color:#ffda84;font-size:38px;line-height:.92;font-weight:1000;letter-spacing:-.06em}',
+        '.scalewisePromoTitle{display:block;margin-top:4px;font-size:17px;line-height:1.25;font-weight:1000;letter-spacing:-.02em}',
+        '.scalewisePromoText{margin:10px 0 14px;color:rgba(255,255,255,.78);font-size:13px;line-height:1.45;font-weight:700}',
+        '.scalewisePromoBtn{display:inline-flex;align-items:center;justify-content:center;border-radius:999px;padding:10px 13px;background:linear-gradient(135deg,#ffda84,#e8bd62);color:#071b34;font-size:12px;font-weight:1000;text-decoration:none}',
+        '@media(max-width:1100px){.scalewisePromoCard{position:relative;top:auto;right:auto;margin:0 auto 28px;width:min(340px,calc(100vw - 36px))}}',
+        '@media(max-width:620px){.scalewisePromoCard{margin-top:-20px;margin-bottom:24px}.scalewisePromoHours{font-size:34px}.scalewisePromoTitle{font-size:16px}}',
         '</style>',
-        '<div class="container"><div class="scalewisePromoFlash"><img src="' + promoImage + '" alt="ScaleWise promotional offer: 20 hours of free service for new clients"></div></div>',
+        '<a class="scalewisePromoCard" href="#client-engagement" aria-label="Claim ScaleWise promotional offer of 20 free hours for new clients">',
+        '<span class="scalewisePromoInner">',
+        '<span class="scalewisePromoLabel"><span class="scalewisePromoGift">🎁</span> Limited-Time Offer</span>',
+        '<strong class="scalewisePromoHours">20 FREE HOURS</strong>',
+        '<strong class="scalewisePromoTitle">Accounting & Finance Support</strong>',
+        '<span class="scalewisePromoText">For new clients exploring bookkeeping, CPA support, payroll, or finance operations.</span>',
+        '<span class="scalewisePromoBtn">Claim Offer →</span>',
+        '</span>',
+        '</a>',
         '<div class="container heroGrid">'
       ].join('');
 
